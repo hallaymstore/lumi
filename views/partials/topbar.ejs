@@ -1,0 +1,15 @@
+<header class="topbar glass">
+  <a class="brand" href="/feed"><span class="brand-orb">L</span><span>Lumi</span></a>
+  <div class="top-actions">
+    <a class="icon-btn" href="/explore" aria-label="Qidirish"><i data-lucide="search"></i></a>
+    <button class="icon-btn" data-theme-toggle aria-label="Tungi rejim"><i data-lucide="moon"></i></button>
+    <% if (currentUser) { %>
+      <a class="icon-btn top-badge-anchor" href="/notifications" aria-label="Bildirishnomalar"><i data-lucide="bell"></i><b class="top-badge" data-notification-badge <%= unreadNotifications ? '' : 'hidden' %>><%= unreadNotifications > 99 ? '99+' : unreadNotifications %></b></a>
+      <% if(currentUser.role === 'admin'){ %><a class="icon-btn admin-top-btn" href="/admin" aria-label="Admin"><i data-lucide="shield-check"></i></a><% } %>
+      <a class="avatar-mini" href="/u/<%= currentUser.username %>" aria-label="Profil"><% if(currentUser.avatarUrl){ %><img src="<%= currentUser.avatarUrl %>" alt=""><% } else { %><span><%= currentUser.name[0].toUpperCase() %></span><% } %></a>
+    <% } else { %>
+      <a class="top-login-link" href="/login?next=<%= encodeURIComponent(path || '/feed') %>">Kirish</a>
+      <a class="btn primary top-register-btn" href="/register?next=<%= encodeURIComponent(path || '/feed') %>">Ro‘yxatdan o‘tish</a>
+    <% } %>
+  </div>
+</header>

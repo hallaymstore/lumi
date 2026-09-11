@@ -1,0 +1,40 @@
+<% const isChatDetail = /^\/chats\/[a-f0-9]{24}$/i.test(path || ''); const hideNav = /^\/(login|register)/.test(path || ''); %>
+<% if (!isChatDetail && !hideNav) { %>
+<nav class="bottom-nav glass bottom-nav-v15" aria-label="Asosiy navigatsiya">
+  <a class="nav-item <%= path === '/feed' ? 'active' : '' %>" href="/feed" data-feed-refresh><i data-lucide="house"></i><span>Feed</span></a>
+  <a class="nav-item <%= path === '/explore' ? 'active' : '' %>" href="/explore"><i data-lucide="search"></i><span>Qidiruv</span></a>
+
+  <button type="button" class="nav-create <%= (path === '/posts/create' || path === '/stories/create') ? 'active' : '' %>" <%= currentUser ? 'data-create-menu-toggle' : 'data-auth-required' %> aria-label="Yaratish" aria-expanded="false">
+    <i data-lucide="plus"></i>
+  </button>
+
+  <a class="nav-item nav-with-badge <%= path.startsWith('/chats') ? 'active' : '' %>" href="<%= currentUser ? '/chats' : '/login?next=/chats' %>" <%= currentUser ? '' : 'data-auth-required' %>><i data-lucide="messages-square"></i><span>Chat</span><% if(currentUser){ %><b class="nav-badge" data-message-badge <%= unreadMessages ? '' : 'hidden' %>><%= unreadMessages > 99 ? '99+' : unreadMessages %></b><% } %></a>
+  <a class="nav-item nav-with-badge <%= path === '/notifications' ? 'active' : '' %>" href="<%= currentUser ? '/notifications' : '/login?next=/notifications' %>" <%= currentUser ? '' : 'data-auth-required' %>><i data-lucide="heart"></i><span>Faollik</span><% if(currentUser){ %><b class="nav-badge" data-notification-badge <%= unreadNotifications ? '' : 'hidden' %>><%= unreadNotifications > 99 ? '99+' : unreadNotifications %></b><% } %></a>
+</nav>
+
+<% if(currentUser){ %>
+<div class="create-popover" data-create-menu hidden>
+  <div class="create-popover-card glass" role="dialog" aria-modal="false" aria-label="Yaratish menyusi">
+    <div class="create-popover-head"><div><small>YARATISH</small><strong>Nima ulashamiz?</strong></div><button type="button" class="create-popover-close" data-create-menu-close aria-label="Yopish"><i data-lucide="x"></i></button></div>
+    <div class="create-popover-options">
+      <a href="/posts/create" class="create-option create-option-post"><span class="create-option-icon"><i data-lucide="image-plus"></i></span><span class="create-option-copy"><strong>Post</strong><small>Rasm, matn va @mention</small></span><i data-lucide="chevron-right" class="create-option-arrow"></i></a>
+      <a href="/stories/create" class="create-option create-option-story"><span class="create-option-icon"><i data-lucide="circle-play"></i></span><span class="create-option-copy"><strong>Story</strong><small>24 soatlik tezkor ulashuv</small></span><i data-lucide="chevron-right" class="create-option-arrow"></i></a>
+      <button type="button" class="create-option create-option-live" disabled aria-disabled="true"><span class="create-option-icon"><i data-lucide="radio"></i></span><span class="create-option-copy"><strong>Live</strong><small>Jonli efir keyingi bosqichda</small></span><span class="create-soon">Tez orada</span></button>
+    </div>
+  </div>
+</div>
+<% } %>
+
+<% if(!currentUser){ %>
+<div class="sheet-backdrop auth-required-sheet" data-auth-sheet hidden>
+  <section class="bottom-sheet auth-sheet-card" role="dialog" aria-modal="true" aria-label="Hisob kerak">
+    <div class="sheet-grabber"></div>
+    <button class="icon-btn auth-sheet-close" type="button" data-sheet-close aria-label="Yopish"><i data-lucide="x"></i></button>
+    <span class="auth-sheet-icon"><i data-lucide="sparkles"></i></span>
+    <h2>Lumi’ga qo‘shiling ✨</h2>
+    <p>Postlarni ko‘rish uchun ro‘yxatdan o‘tish shart emas. Like, comment, follow, chat, saqlash va post joylash uchun hisob kerak.</p>
+    <div class="auth-sheet-actions"><a class="btn primary" href="/register?next=<%= encodeURIComponent(path || '/feed') %>">Ro‘yxatdan o‘tish</a><a class="btn ghost" href="/login?next=<%= encodeURIComponent(path || '/feed') %>">Kirish</a></div>
+  </section>
+</div>
+<% } %>
+<% } %>

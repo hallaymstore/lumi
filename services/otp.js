@@ -1,0 +1,9 @@
+const crypto=require('crypto');const OtpCode=require('../models/OtpCode');
+function hash(phone,code){return crypto.createHmac('sha256',process.env.OTP_SECRET||process.env.SESSION_SECRET||'lumi-otp').update(`${phone}:${code}`).digest('hex')}
+async function sendViaEskiz(phone,code){const token=process.env.ESKIZ_TOKEN;if(!token)throw new Error('ESKIZ_TOKEN o‘rnatilmagan');const body=new URLSearchParams({mobile_phone:phone.replace('+',''),message:`Lumi tasdiqlash kodi: ${code}`,from:process.env.ESKIZ_FROM||'4546'});const r=await fetch('https://notify.eskiz.uz/api/message/sms/send',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/x-www-form-urlencoded'},body});if(!r.ok)throw new Error('SMS yuborilmadi')}
+async function sendOtp(phone,purpose='register'){
+  const code=String(Math.floor(100000+Math.random()*900000));await OtpCode.deleteMany({phone,purpose});await OtpCode.create({phone,purpose,codeHash:hash(phone,code),expiresAt:new Date(Date.now()+Math.max(2,Math.min(15,Number(process.env.OTP_TTL_MINUTES||5)))*60*1000)});
+  const provider=(process.env.OTP_PROVIDER||'console').toLowerCase();if(provider==='eskiz')await sendViaEskiz(phone,code);else{if(process.env.NODE_ENV==='production'&&process.env.OTP_REQUIRED==='true')throw new Error('Production uchun OTP_PROVIDER=eskiz va ESKIZ_TOKEN sozlang.');console.log(`[Lumi OTP] ${phone} ${purpose}: ${code}`)}return true;
+}
+async function verifyOtp(phone,purpose,code){const row=await OtpCode.findOne({phone,purpose,expiresAt:{$gt:new Date()},verifiedAt:null}).sort({createdAt:-1});if(!row)return false;row.attempts+=1;if(row.attempts>5){await row.save();return false}const ok=crypto.timingSafeEqual(Buffer.from(row.codeHash),Buffer.from(hash(phone,String(code||''))));if(ok)row.verifiedAt=new Date();await row.save();return ok}
+module.exports={sendOtp,verifyOtp};

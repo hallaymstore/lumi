@@ -1,0 +1,11 @@
+<%- include('../partials/head') %><%- include('../partials/topbar') %>
+<main class="auth-wrap"><form class="card form-card" method="post" action="/register"><input type="hidden" name="next" value="<%= next || '/feed' %>">
+  <div class="form-icon"><i data-lucide="sparkles"></i></div><h1>Lumi’ga qo‘shiling</h1><p class="muted">Email shart emas — telefon raqam bilan akkaunt yarating.</p>
+  <% if(error){ %><div class="alert"><%= error %></div><% } %>
+  <label>Ism<input name="name" required maxlength="60" placeholder="Ismingiz" autocomplete="name"></label>
+  <label>Username<input name="username" required minlength="3" maxlength="24" placeholder="masalan: beauty.uz" autocapitalize="none"></label>
+  <label>Telefon raqam<input type="tel" name="phone" required data-phone-input inputmode="tel" autocomplete="tel" placeholder="+998 90 123 45 67"></label>
+  <label>Parol<input type="password" name="password" required minlength="8" autocomplete="new-password" placeholder="Kamida 8 belgi"></label>
+  <label class="check"><input type="checkbox" name="ageConfirmed18" value="1" required><span>Men 18 yoshga to‘lganman va qoidalarga roziman.</span></label>
+  <button class="btn primary full">Akkaunt yaratish</button><p class="form-foot">Akkauntingiz bormi? <a href="/login?next=<%= encodeURIComponent(next || '/feed') %>">Kirish</a></p>
+</form></main><%- include('../partials/footer') %>

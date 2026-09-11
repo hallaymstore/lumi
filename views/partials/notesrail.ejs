@@ -1,0 +1,73 @@
+<section class="notes-zone card" aria-label="Notes">
+  <div class="notes-head">
+    <div class="notes-title-wrap">
+      <span class="notes-title-icon"><i data-lucide="message-circle-heart"></i></span>
+      <div><strong>Notes</strong><small>Do‘stlaringizning qisqa fikrlari</small></div>
+    </div>
+    <span class="notes-expiry"><i data-lucide="clock-3"></i>24 soat</span>
+  </div>
+
+  <div class="notes-rail">
+    <% notePeople.forEach((person) => {
+      const isMe = currentUser && person._id.toString() === currentUser._id.toString();
+      if (!isMe && !person.noteText) return;
+    %>
+      <div class="note-person <%= isMe ? 'mine' : '' %>">
+        <% if (isMe) { %>
+          <button type="button" class="note-card" data-note-open title="Note yozish">
+        <% } else { %>
+          <a class="note-card" href="/u/<%= person.username %>" title="@<%= person.username %>">
+        <% } %>
+
+            <span class="note-cloud <%= person.noteText ? 'has-note' : 'empty-note' %>">
+              <span><%= person.noteText || 'Note qoldiring…' %></span>
+            </span>
+
+            <span class="note-avatar-wrap <%= person.noteText ? 'has-note' : '' %>">
+              <span class="avatar note-avatar">
+                <% if(person.avatarUrl){ %><img src="<%=person.avatarUrl%>" alt=""><% } else { %><b><%=person.name[0].toUpperCase()%></b><% } %>
+              </span>
+              <% if(isMe){ %><span class="note-plus"><i data-lucide="plus"></i></span><% } %>
+            </span>
+
+            <span class="note-name"><%= isMe ? 'Sizning note' : '@'+person.username %></span>
+
+        <% if (isMe) { %>
+          </button>
+        <% } else { %>
+          </a>
+        <% } %>
+      </div>
+    <% }) %>
+  </div>
+</section>
+
+<div class="sheet-backdrop" data-note-sheet hidden>
+  <section class="mini-sheet note-sheet card" role="dialog" aria-modal="true" aria-label="Note yozish">
+    <div class="sheet-grabber"></div>
+    <div class="note-sheet-head">
+      <button type="button" class="icon-btn" data-sheet-close aria-label="Yopish"><i data-lucide="x"></i></button>
+      <strong>Yangi note</strong>
+      <span></span>
+    </div>
+
+    <div class="note-compose-preview">
+      <span class="avatar note-compose-avatar">
+        <% if(currentUser.avatarUrl){ %><img src="<%=currentUser.avatarUrl%>" alt=""><% } else { %><b><%=currentUser.name[0].toUpperCase()%></b><% } %>
+      </span>
+      <span class="note-compose-cloud" data-note-preview><%= currentUser.noteText || 'Bugun nimani o‘ylayapsiz? ✨' %></span>
+    </div>
+
+    <form method="post" action="/notes" class="note-compose-form">
+      <label>
+        <span>Note matni</span>
+        <textarea class="note-input" name="text" maxlength="60" rows="3" data-note-input placeholder="Masalan: Bugun kayfiyat zo‘r ✨"><%= currentUser.noteText || '' %></textarea>
+      </label>
+      <div class="note-compose-meta"><small>Faqat Xabarlar sahifasining tepasida ko‘rinadi.</small><b><span data-note-count><%= (currentUser.noteText || '').length %></span>/60</b></div>
+      <div class="sheet-buttons">
+        <% if (currentUser.noteText) { %><button class="btn ghost" type="submit" formaction="/notes/delete"><i data-lucide="trash-2"></i> O‘chirish</button><% } %>
+        <button class="btn primary" type="submit"><i data-lucide="send"></i> Joylash</button>
+      </div>
+    </form>
+  </section>
+</div>

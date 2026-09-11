@@ -1,0 +1,15 @@
+<% if(storyPeople && storyPeople.length){ %>
+<div class="story-strip story-strip-rich">
+  <% storyPeople.forEach((person) => { const isMe = currentUser && person._id.toString() === currentUser._id.toString(); const href = currentUser ? (person.hasStory ? '/stories/' + person.username : (isMe ? '/stories/create' : '/u/' + person.username)) : '/login?next=' + encodeURIComponent('/stories/' + person.username); %>
+    <div class="story-wrap">
+      <a class="story <%= person.hasStory ? 'has-story' : 'no-story' %>" href="<%= href %>" <%= currentUser ? '' : 'data-auth-required' %>>
+        <span>
+          <% if(person.avatarUrl){ %><img src="<%= person.avatarUrl %>" alt=""><% } else { %><b><%= person.name[0].toUpperCase() %></b><% } %>
+          <% if(isMe){ %><em class="story-plus"><i data-lucide="plus"></i></em><% } %>
+        </span>
+        <small><%= isMe ? 'Storyingiz' : person.username %></small>
+      </a>
+    </div>
+  <% }) %>
+</div>
+<% } %>

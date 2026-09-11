@@ -1,0 +1,5 @@
+<%- include('partials/head') %><%- include('partials/topbar') %>
+<main class="content narrow saved-page"><div class="page-title-row"><div><h1>Saqlanganlar</h1><p class="muted">Keyinroq ko‘rish uchun saqlagan postlaringiz.</p></div><a class="icon-btn" href="/u/<%=currentUser.username%>"><i data-lucide="x"></i></a></div>
+<% if(!posts.length){ %><div class="card empty"><i data-lucide="bookmark"></i><h2>Hali post saqlanmagan</h2><p>Feed’da bookmark belgisini bosing.</p><a class="btn primary" href="/feed">Feedga o‘tish</a></div><% } %>
+<div class="profile-grid"><% posts.forEach(p=>{ %><a class="profile-tile" href="/p/<%=p._id%>"><img src="<%=p.imageUrl%>" loading="lazy"><span><i data-lucide="heart"></i> <%=p.likes?.length||0%></span></a><%})%></div></main>
+<%- include('partials/footer') %>

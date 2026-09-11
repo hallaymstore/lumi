@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="uz" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#ff4f8b">
+  <meta name="robots" content="<%= /^\/(chats|settings|admin|notifications|saved|login|register)/.test(path || '') ? 'noindex,nofollow' : 'index,follow,max-image-preview:large' %>">
+  <title><%= metaTitle || (title + ' · Lumi') %></title>
+  <meta name="description" content="<%= metaDescription || 'Lumi — kreativ vizual postlar, creatorlar va premium mobile-first social platforma.' %>">
+  <link rel="canonical" href="<%= canonicalUrl %>">
+
+  <meta property="og:site_name" content="Lumi">
+  <meta property="og:type" content="<%= metaType || 'website' %>">
+  <meta property="og:title" content="<%= metaTitle || (title + ' · Lumi') %>">
+  <meta property="og:description" content="<%= metaDescription || 'Lumi — kreativ vizual postlar va creatorlar uchun social platforma.' %>">
+  <meta property="og:url" content="<%= canonicalUrl %>">
+  <% if(metaImage){ %><meta property="og:image" content="<%= metaImage %>"><meta property="og:image:alt" content="<%= metaTitle || title %>"><% } %>
+  <meta name="twitter:card" content="<%= metaImage ? 'summary_large_image' : 'summary' %>">
+  <meta name="twitter:title" content="<%= metaTitle || (title + ' · Lumi') %>">
+  <meta name="twitter:description" content="<%= metaDescription || 'Lumi social platforma' %>">
+  <% if(metaImage){ %><meta name="twitter:image" content="<%= metaImage %>"><% } %>
+
+  <% if(jsonLd){ %><script type="application/ld+json"><%- JSON.stringify(jsonLd).replace(/</g,'\\u003c') %></script><% } %>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <link rel="preconnect" href="https://unpkg.com">
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
+  <script src="/js/app.js" defer></script>
+  <script src="/js/realtime.js" defer></script>
+  <script src="/js/pwa.js" defer></script>
+  <script src="/js/v16.js" defer></script>
+</head>
+<body class="<%= /^\/chats\/[a-f0-9]{24}$/i.test(path || '') ? 'chat-detail-body' : '' %> <%= currentUser?.dataSaver ? 'data-saver' : '' %>" data-current-user-id="<%= currentUser?._id || '' %>" data-authenticated="<%= currentUser ? '1' : '0' %>">
+<div class="app-shell">

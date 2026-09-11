@@ -1,0 +1,17 @@
+<%- include('partials/head') %>
+<%- include('partials/topbar') %>
+<main class="landing">
+  <section class="hero-card">
+    <div class="hero-copy">
+      <span class="eyebrow">✨ VISUAL SOCIAL SPACE</span>
+      <h1>Ko‘ring. Kashf qiling. <span>Ilhom oling.</span></h1>
+      <p>Lumi’ni ro‘yxatdan o‘tmasdan ham tomosha qiling. Creatorlar, premium feed, vizual postlar va alohida ulashiladigan post havolalari — barchasi mobil-first tajribada.</p>
+      <div class="hero-actions"><a class="btn primary" href="/feed">Postlarni ko‘rish</a><a class="btn ghost" href="/register">Lumi’ga qo‘shilish</a></div>
+    </div>
+    <div class="phone-mock"><div class="phone-head"><span class="pill"></span><span>9:41</span><span>•••</span></div><div class="mock-story-row"><span></span><span></span><span></span><span></span></div><div class="mock-post"><div class="mock-photo"><div class="glow"></div><strong>BEAUTIFUL<br>MOMENTS</strong></div><div class="mock-icons">♡　◯　⌁ <b>♡ 12.8K</b></div></div></div>
+  </section>
+  <section class="feature-grid"><article><i data-lucide="globe-2"></i><h3>Public discovery</h3><p>Post va profillar tashqi havoladan ochiladi, qidiruv tizimlari uchun SEO meta bilan.</p></article><article><i data-lucide="share-2"></i><h3>Smart sharing</h3><p>Telegram, WhatsApp, X yoki telefonning native share oynasi orqali ulashing.</p></article><article><i data-lucide="shield-check"></i><h3>Moderatsiya</h3><p>Report, hide, suspend, verification va to‘liq admin nazorati.</p></article></section>
+  <% if (featured.length) { %><section><h2 class="section-title">Trend vizuallar</h2><div class="masonry"><% featured.forEach(p=>{ %><a href="/p/<%=p._id%>" data-view-track data-post-id="<%=p._id%>"><img src="<%= p.imageUrl %>" alt="<%=(p.caption||'Lumi post').slice(0,80)%>"></a><% }) %></div></section><% } %>
+  <p class="legal-note">Lumi 18+ foydalanuvchilar uchun. Voyaga yetmaganlarni seksualizatsiya qiluvchi kontent qat’iyan taqiqlanadi.</p>
+</main>
+<%- include('partials/footer') %>

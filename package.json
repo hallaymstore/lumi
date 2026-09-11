@@ -1,0 +1,38 @@
+{
+  "name": "lumigirls-social",
+  "version": "1.6.0",
+  "private": true,
+  "description": "Lumi v1.6 production social core with personalized feed ranking, scalable social collections, OTP-ready auth, Redis-aware realtime, web push, moderation, carousel posts, media lifecycle and creator analytics",
+  "main": "app.js",
+  "scripts": {
+    "dev": "nodemon app.js",
+    "start": "node app.js",
+    "admin:bootstrap": "node scripts/bootstrap-admin.js",
+    "migrate:v16": "node scripts/migrate-v16.js",
+    "check": "node scripts/check-project.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.883.0",
+    "bcryptjs": "^3.0.2",
+    "connect-mongo": "^5.1.0",
+    "dotenv": "^17.2.2",
+    "ejs": "^3.1.10",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.1.0",
+    "express-session": "^1.18.2",
+    "helmet": "^8.1.0",
+    "method-override": "^3.0.0",
+    "mongoose": "^8.18.0",
+    "multer": "^2.0.2",
+    "sharp": "^0.34.3",
+    "file-type": "^20.5.0",
+    "redis": "^5.8.2",
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}

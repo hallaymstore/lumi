@@ -1,0 +1,9 @@
+<%- include('partials/head') %><%- include('partials/topbar') %>
+<main class="content feed-layout"><section class="feed-column" data-feed-nonce="<%=feedNonce%>">
+  <div class="feed-tabs glass"><a class="<%=feedMode==='foryou'?'active':''%>" href="/feed?tab=foryou">For You</a><a class="<%=feedMode==='following'?'active':''%>" href="/feed?tab=following">Following</a><a class="<%=feedMode==='new'?'active':''%>" href="/feed?tab=new">Yangi</a></div>
+  <% if(!currentUser){ %><div class="guest-banner card"><span><i data-lucide="sparkles"></i></span><div><b>Lumi’ni erkin tomosha qiling</b><p>Guest ko‘rishlar ham hisoblanadi. Like, comment, follow va chat uchun hisob kerak.</p></div><a class="btn primary" href="/register">Qo‘shilish</a></div><% } %>
+  <%- include('partials/storystrip', { storyPeople }) %>
+  <% if(!posts.length){ %><div class="empty card"><i data-lucide="image-plus"></i><h2>Bu bo‘lim hali bo‘sh</h2><p><%=feedMode==='following'?'Obuna bo‘lgan creatorlaringiz postlari shu yerda chiqadi.':'Birinchi postni joylash uchun Lumi’ga qo‘shiling ✨'%></p><a class="btn primary" href="<%= currentUser ? '/explore' : '/register' %>"><%= currentUser ? 'Creator topish' : 'Ro‘yxatdan o‘tish' %></a></div><% } %>
+  <% posts.forEach(p=>{ %><%- include('partials/postcard', { p }) %><% }) %>
+</section><aside class="desktop-side card"><h3>Lumi ✦ For You</h3><p class="muted">Feed endi faqat oxirgi postlarga bog‘liq emas. Following, engagement, dwell time, save/share, qiziqish taglari, ko‘rilgan postlar va discovery signallari aralashtiriladi.</p><a href="/explore" class="mini-link">Yangi creatorlarni topish →</a><% if(currentUser){ %><a href="/creator/analytics" class="mini-link side-link"><i data-lucide="chart-no-axes-combined"></i> Creator Analytics</a><a href="/saved" class="mini-link side-link"><i data-lucide="bookmark"></i> Saqlanganlar</a><% } %></aside></main>
+<%- include('partials/postsheets', { shareTargets }) %><%- include('partials/footer') %>
