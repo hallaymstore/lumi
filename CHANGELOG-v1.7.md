@@ -9,6 +9,8 @@
 - Admin campaign create/edit/pause/end controls with R2 image uploads.
 - Audience, schedule, placement, priority and global delivery controls.
 - Every paid placement remains visibly labelled as advertising.
+- Existing non-intrusive Adsterra banner zones from the owner's Reward Arena are used as a fallback when no direct campaign is available.
+- Network banners run in isolated sandboxed iframes; popunder and Social Bar scripts are intentionally not injected into Lumi.
 
 ## Admin
 

@@ -1,0 +1,7 @@
+<article class="network-ad-card <%=variant==='native'?'network-native':'network-banner'%>" data-network-ad data-network-placement="<%=placement%>" data-network-delay="<%=adConfig.ctaDelaySeconds||3%>">
+  <div class="network-ad-head"><span><i data-lucide="badge-dollar-sign"></i> <%=adConfig.label||'Reklama'%> · Hamkor tarmoq</span><small>Adsterra</small></div>
+  <div class="network-frame-wrap" data-network-frame-wrap>
+    <iframe data-network-frame data-mobile="/ads/network/<%=variant==='native'?'rectangle':'mobile'%>" data-desktop="/ads/network/<%=variant==='native'?'rectangle':'desktop'%>" title="Hamkor reklama" loading="lazy" scrolling="no" referrerpolicy="no-referrer-when-downgrade" sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox allow-forms"></iframe>
+    <div class="network-ad-lock" data-network-lock><i data-lucide="timer"></i><b data-network-countdown><%=adConfig.ctaDelaySeconds||3%></b><span>soniya ko‘ring</span></div>
+  </div>
+</article>

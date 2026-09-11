@@ -8,6 +8,8 @@ This version keeps the personalized social core and adds a first-party advertisi
 
 Admin uchun `/admin/ads` reklama markazi mavjud. U Feed ichidagi native reklama, Explore va profil bannerlari, post sahifasi hamda chat joylashuvlarini boshqaradi. Kampaniyada auditoriya, vaqt oralig‘i, ustuvorlik, budjet, CPM/CPC narxi va CTA belgilanadi. Ko‘rsatishlar reklama kamida 55% ko‘ringandan so‘ng qayd etiladi, o‘tish tugmasi esa standart holatda 3 soniyadan keyin ochiladi.
 
+Ichki kampaniya mavjud bo‘lmasa, `hallaymstore/adsterra` loyihasidagi mavjud 320×50, 300×250 va 468×60 banner zonalari xavfsiz iframe ichida fallback sifatida ishlaydi. Popunder va Social Bar Lumi’da ataylab qo‘llanmaydi.
+
 ## Main features
 
 ### Feed / discovery

@@ -24,6 +24,7 @@
         <label>Reklama belgisi<input name="label" maxlength="24" value="<%=config.label%>"></label>
         <label class="check-row"><input type="checkbox" name="profileEnabled" <%=config.profileEnabled?'checked':''%>><span><b>Profil bannerlari</b></span></label>
         <label class="check-row"><input type="checkbox" name="chatsEnabled" <%=config.chatsEnabled?'checked':''%>><span><b>Chat reklamasi</b></span></label>
+        <label class="check-row"><input type="checkbox" name="networkEnabled" <%=config.networkEnabled?'checked':''%>><span><b>Adsterra fallback</b><small>Ichki kampaniya bo‘lmasa tarmoq banneri</small></span></label>
         <button class="btn primary full"><i data-lucide="save"></i> Sozlamalarni saqlash</button>
       </form></section>
       <section class="admin-panel card"><div class="admin-panel-head"><div><span class="settings-kicker">LAST 7 DAYS</span><h2>Faollik</h2></div></div><div class="ad-daily-list"><%if(!daily.length){%><small>Hali reklama eventi yo‘q.</small><%}%><%daily.forEach(x=>{%><div><span><%=x._id.day%></span><b><%=x._id.type%>: <%=x.count%></b><small>$<%=Number(x.revenue||0).toFixed(3)%></small></div><%})%></div></section>

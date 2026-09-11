@@ -8,6 +8,7 @@ const adConfigSchema = new mongoose.Schema({
   maxAdsPerPage: { type: Number, min: 1, max: 20, default: 8 },
   profileEnabled: { type: Boolean, default: true },
   chatsEnabled: { type: Boolean, default: true },
+  networkEnabled: { type: Boolean, default: true },
   label: { type: String, maxlength: 24, default: 'Reklama' },
   updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }
 }, { timestamps: true });
