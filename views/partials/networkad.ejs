@@ -1,5 +1,5 @@
-<%const networkFormat=(variant==='native'||variant==='sidebar')?'rectangle':'banner';%>
-<article class="network-ad-card network-<%=variant%>" data-network-ad data-network-placement="<%=placement%>" data-network-delay="<%=adConfig.ctaDelaySeconds||3%>">
+<%const networkFormat=variant==='native'?'native':variant==='sidebar'?'rectangle':'banner';%>
+<article class="network-ad-card network-<%=variant%>" data-network-ad data-network-placement="<%=placement%>" data-network-format="<%=networkFormat%>" data-network-delay="<%=adConfig.ctaDelaySeconds||3%>">
   <header class="network-ad-head">
     <span class="network-brandmark"><i data-lucide="sparkles"></i></span>
     <span class="network-ad-identity"><strong>Hamkor tavsiyasi</strong><small>Lumi Ads</small></span>
@@ -7,13 +7,13 @@
   </header>
   <div class="network-frame-wrap" data-network-frame-wrap>
     <div class="network-backdrop" aria-hidden="true"><i></i><i></i><span><b>Maxsus taklif</b><small>Hamkor reklamasi yuklanmoqda</small></span></div>
-    <%if(variant==='native'){%><div class="network-native-copy"><span>TAVSIYA ETILGAN</span><h3>Hamkorlardan maxsus taklif</h3><p>Sizga mos yangilik, mahsulot va xizmatlarni kashf eting.</p><b>Batafsil <i data-lucide="arrow-up-right"></i></b></div><%}%>
-    <%if(variant==='banner'){%><div class="network-banner-copy"><span>YANGI</span><h3>Yangi imkoniyatlarni toping!</h3><small>Hamkor takliflarini kashf eting</small></div><%}%>
-    <%if(variant==='sidebar'){%><div class="network-sidebar-copy"><span>DISCOVER</span><h3>Yangi imkoniyatlarni toping!</h3><small>Hamkor takliflarini kashf eting <i data-lucide="arrow-up-right"></i></small></div><%}%>
+    <%if(variant==='native'){%><div class="network-native-copy"><span>TAVSIYA ETILGAN</span><h3>Hamkorlardan maxsus taklif</h3><p>Sizga mos yangilik, mahsulot va xizmatlarni kashf eting.</p><a href="/ads/network/direct?placement=<%=placement%>&format=<%=networkFormat%>" data-network-cta hidden target="_blank" rel="nofollow sponsored noopener noreferrer">Batafsil <i data-lucide="arrow-up-right"></i></a></div><%}%>
+    <%if(variant==='banner'){%><div class="network-banner-copy"><span>YANGI</span><h3>Yangi imkoniyatlarni toping!</h3><a href="/ads/network/direct?placement=<%=placement%>&format=<%=networkFormat%>" data-network-cta hidden target="_blank" rel="nofollow sponsored noopener noreferrer">Hamkor taklifini ochish <i data-lucide="arrow-up-right"></i></a></div><%}%>
+    <%if(variant==='sidebar'){%><div class="network-sidebar-copy"><span>DISCOVER</span><h3>Yangi imkoniyatlarni toping!</h3><a href="/ads/network/direct?placement=<%=placement%>&format=<%=networkFormat%>" data-network-cta hidden target="_blank" rel="nofollow sponsored noopener noreferrer">Hamkor taklifini ochish <i data-lucide="arrow-up-right"></i></a></div><%}%>
     <div class="network-frame-shell">
-      <iframe data-network-frame data-mobile="/ads/network/<%=networkFormat==='rectangle'?'rectangle':'mobile'%>" data-desktop="/ads/network/<%=networkFormat==='rectangle'?'rectangle':'desktop'%>" title="Hamkor reklama" loading="lazy" scrolling="no" referrerpolicy="no-referrer-when-downgrade" sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox allow-forms"></iframe>
+      <iframe data-network-frame data-mobile="/ads/network/<%=networkFormat==='native'?'native':networkFormat==='rectangle'?'rectangle':'mobile'%>?v=1.7.3" data-desktop="/ads/network/<%=networkFormat==='native'?'native':networkFormat==='rectangle'?'rectangle':'desktop'%>?v=1.7.3" title="Adsterra hamkor reklamasi" loading="lazy" scrolling="no" referrerpolicy="no-referrer-when-downgrade" sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox allow-forms"></iframe>
     </div>
-    <div class="network-ad-lock" data-network-lock><span class="network-lock-icon"><i data-lucide="eye"></i></span><span><small>Taklifni ko‘ring</small><b><em data-network-countdown><%=adConfig.ctaDelaySeconds||3%></em> soniya</b></span><i data-lucide="chevron-right"></i></div>
+    <div class="network-ad-lock" data-network-lock><span class="network-lock-icon"><i data-lucide="loader-circle"></i></span><span><small data-network-lock-label>Haqiqiy reklama yuklanmoqda</small><b data-network-timer hidden><em data-network-countdown><%=adConfig.ctaDelaySeconds||3%></em> soniya</b></span><i data-lucide="chevron-right"></i></div>
   </div>
   <footer class="network-ad-foot"><span><i data-lucide="shield-check"></i> Xavfsiz hamkor joylashuvi</span><small>Reklama kontenti hamkor tarmoq tomonidan taqdim etiladi</small></footer>
 </article>

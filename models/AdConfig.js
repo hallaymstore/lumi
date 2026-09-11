@@ -9,6 +9,7 @@ const adConfigSchema = new mongoose.Schema({
   profileEnabled: { type: Boolean, default: true },
   chatsEnabled: { type: Boolean, default: true },
   networkEnabled: { type: Boolean, default: true },
+  networkEcpm: { type: Number, min: 0, max: 100, default: 0.5 },
   label: { type: String, maxlength: 24, default: 'Reklama' },
   updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }
 }, { timestamps: true });

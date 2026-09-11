@@ -1,6 +1,6 @@
 {
   "name": "lumigirls-social",
-  "version": "1.7.2",
+  "version": "1.7.3",
   "private": true,
   "description": "Lumi v1.7 production social platform with personalized feed, realtime chat, web push and a native CPM/CPC advertising center",
   "main": "app.js",

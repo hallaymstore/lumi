@@ -1,5 +1,5 @@
-const CACHE='lumi-shell-v1.7.2';
-const STATIC=['/offline.html','/css/app.css?v=1.7.2','/js/app.js?v=1.7.2','/js/realtime.js?v=1.7.2','/js/pwa.js?v=1.7.2','/js/v16.js?v=1.7.2','/js/ads.js?v=1.7.2','/icons/icon-192.png','/icons/icon-512.png','/manifest.webmanifest?v=1.7.2'];
+const CACHE='lumi-shell-v1.7.3';
+const STATIC=['/offline.html','/css/app.css?v=1.7.3','/js/app.js?v=1.7.3','/js/realtime.js?v=1.7.3','/js/pwa.js?v=1.7.3','/js/v16.js?v=1.7.3','/js/ads.js?v=1.7.3','/icons/icon-192.png','/icons/icon-512.png','/manifest.webmanifest?v=1.7.3'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(STATIC)).catch(()=>{}).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',e=>{const req=e.request;if(req.method!=='GET')return;const url=new URL(req.url);if(url.origin!==location.origin)return;

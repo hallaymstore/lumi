@@ -73,52 +73,84 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => card.remove(), 180);
   }));
 
-  // Existing Adsterra banner zones are isolated in sandboxed same-origin iframes.
-  // The lock pauses whenever the slot leaves the viewport, matching the native CTA rule.
+  // Adsterra units stay isolated in their own frames. The countdown begins only
+  // after the provider reports a creative (or the monetized direct-link fallback).
   const networkSlots = [...document.querySelectorAll('[data-network-ad]')];
   const networkState = new Map(networkSlots.map(slot => [slot, {
     remaining: Math.max(1, Number(slot.dataset.networkDelay) || 3) * 1000,
-    visibleSince: 0, timer: null, ready: false, loaded: false
+    startedAt: 0, timer: null, loadTimer: null, ready: false, loaded: false, started: false, providerReady: false, impressionSent: false
   }]));
-  const startNetwork = slot => {
+
+  const revealNetwork = (slot, state) => {
+    if (state.ready) return;
+    state.ready = true;
+    clearInterval(state.timer); state.timer = null;
+    clearTimeout(state.loadTimer); state.loadTimer = null;
+    slot.querySelector('[data-network-lock]')?.setAttribute('hidden', '');
+    slot.querySelectorAll('[data-network-cta]').forEach(link => { link.hidden = false; });
+    slot.classList.add('network-ready');
+    if (!state.impressionSent) {
+      state.impressionSent = true;
+      fetch('/api/ads/network/impression', {
+        method: 'POST', keepalive: true,
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          placement: slot.dataset.networkPlacement,
+          format: slot.dataset.networkFormat,
+          providerState: state.providerReady ? 'provider' : 'fallback'
+        })
+      }).catch(() => {});
+    }
+    window.lucide?.createIcons();
+  };
+
+  const beginNetworkCountdown = (slot, providerReady = false) => {
     const state = networkState.get(slot);
-    if (!state || state.visibleSince || state.ready) return;
+    if (!state || state.started || state.ready) return;
+    state.started = true;
+    state.providerReady = providerReady;
+    clearTimeout(state.loadTimer); state.loadTimer = null;
+    slot.classList.remove('network-loading');
+    slot.classList.add(providerReady ? 'network-provider-ready' : 'network-provider-fallback');
+    const label = slot.querySelector('[data-network-lock-label]');
+    if (label) label.textContent = providerReady ? 'Reklamani ko‘ring' : 'Hamkor taklifi tayyor';
+    const timerRow = slot.querySelector('[data-network-timer]');
+    if (timerRow) timerRow.hidden = false;
+    state.startedAt = performance.now();
+    state.timer = setInterval(() => {
+      const left = state.remaining - (performance.now() - state.startedAt);
+      const count = slot.querySelector('[data-network-countdown]');
+      if (count) count.textContent = Math.max(0, Math.ceil(left / 1000));
+      if (left <= 0) revealNetwork(slot, state);
+    }, 150);
+  };
+
+  const loadNetwork = slot => {
+    const state = networkState.get(slot);
+    if (!state || state.loaded) return;
     const frame = slot.querySelector('[data-network-frame]');
-    if (frame && !state.loaded) {
+    if (frame) {
       slot.classList.add('network-loading');
       frame.addEventListener('load', () => {
-        slot.classList.remove('network-loading');
-        slot.classList.add('network-loaded');
+        slot.classList.add('network-frame-loaded');
       }, { once: true });
       frame.src = innerWidth <= 640 ? frame.dataset.mobile : frame.dataset.desktop;
       state.loaded = true;
+      state.loadTimer = setTimeout(() => beginNetworkCountdown(slot, false), 8000);
     }
-    state.visibleSince = performance.now();
-    state.timer = setInterval(() => {
-      const left = state.remaining - (performance.now() - state.visibleSince);
-      const count = slot.querySelector('[data-network-countdown]');
-      if (count) count.textContent = Math.max(0, Math.ceil(left / 1000));
-      if (left <= 0) {
-        state.remaining = 0; state.ready = true;
-        clearInterval(state.timer); state.timer = null;
-        slot.querySelector('[data-network-lock]')?.setAttribute('hidden', '');
-        slot.classList.add('network-ready');
-        window.lucide?.createIcons();
-      }
-    }, 150);
   };
-  const pauseNetwork = slot => {
-    const state = networkState.get(slot);
-    if (!state || !state.visibleSince || state.ready) return;
-    state.remaining = Math.max(0, state.remaining - (performance.now() - state.visibleSince));
-    state.visibleSince = 0;
-    clearInterval(state.timer); state.timer = null;
-  };
+
+  addEventListener('message', event => {
+    if (event.data?.type !== 'lumi-adsterra') return;
+    const slot = networkSlots.find(item => item.querySelector('[data-network-frame]')?.contentWindow === event.source);
+    if (!slot) return;
+    beginNetworkCountdown(slot, event.data.state === 'ready');
+  });
+
   if ('IntersectionObserver' in window && networkSlots.length) {
     const networkObserver = new IntersectionObserver(entries => entries.forEach(entry => {
-      if (entry.isIntersecting && entry.intersectionRatio >= .55) startNetwork(entry.target);
-      else pauseNetwork(entry.target);
-    }), { threshold: [0, .55, 1] });
+      if (entry.isIntersecting && entry.intersectionRatio >= .35) loadNetwork(entry.target);
+    }), { threshold: [0, .35, 1] });
     networkSlots.forEach(slot => networkObserver.observe(slot));
-  } else networkSlots.forEach(startNetwork);
+  } else networkSlots.forEach(loadNetwork);
 });

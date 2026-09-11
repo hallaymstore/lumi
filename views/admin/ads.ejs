@@ -2,14 +2,25 @@
 <main class="content ad-admin-page">
   <div class="admin-hero"><div><span class="settings-kicker">MONETIZATION CENTER</span><h1>Reklama markazi</h1><p>Feed, qidiruv, profil va chat reklamalarini bitta joydan boshqaring.</p></div><div class="admin-hero-actions"><a class="btn primary" href="/admin/ads/new"><i data-lucide="plus"></i> Kampaniya</a><a class="btn ghost" href="/admin"><i data-lucide="arrow-left"></i> Admin</a></div></div>
   <section class="ad-admin-stats">
-    <article><span><i data-lucide="eye"></i></span><small>Ko‘rsatishlar</small><b><%=Number(totals.impressions||0).toLocaleString('uz-UZ')%></b></article>
-    <article><span><i data-lucide="mouse-pointer-click"></i></span><small>Bosishlar</small><b><%=Number(totals.clicks||0).toLocaleString('uz-UZ')%></b></article>
-    <article><span><i data-lucide="percent"></i></span><small>CTR</small><b><%=Number(totals.ctr||0).toFixed(2)%>%</b></article>
-    <article class="revenue"><span><i data-lucide="circle-dollar-sign"></i></span><small>Hisoblangan daromad</small><b>$<%=Number(totals.revenue||0).toFixed(2)%></b></article>
+    <article><span><i data-lucide="eye"></i></span><small>Jami ko‘rsatishlar</small><b><%=Number(totals.impressions||0).toLocaleString('uz-UZ')%></b></article>
+    <article><span><i data-lucide="mouse-pointer-click"></i></span><small>Jami bosishlar</small><b><%=Number(totals.clicks||0).toLocaleString('uz-UZ')%></b></article>
+    <article><span><i data-lucide="percent"></i></span><small>Umumiy CTR</small><b><%=Number(totals.ctr||0).toFixed(2)%>%</b></article>
+    <article class="revenue"><span><i data-lucide="circle-dollar-sign"></i></span><small>Jami hisoblangan daromad</small><b>$<%=Number(totals.revenue||0).toFixed(3)%></b></article>
+  </section>
+  <section class="network-admin-overview card">
+    <div class="network-admin-title"><span><i data-lucide="radio-tower"></i></span><div><small>ADSTERRA · LIVE NETWORK</small><h2>Tarmoq reklamasi statistikasi</h2><p>Haqiqiy provider ko‘rsatishlari va Lumi ichidagi Direct Link bosishlari.</p></div><b class="ad-status <%=config.networkEnabled?'active':'paused'%>"><%=config.networkEnabled?'faol':'o‘chiq'%></b></div>
+    <div class="network-admin-metrics">
+      <div><small>Ko‘rsatishlar</small><b><%=Number(networkTotals.impressions||0).toLocaleString('uz-UZ')%></b><span><%=Number(networkTotals.providerImpressions||0).toLocaleString('uz-UZ')%> real creative</span></div>
+      <div><small>Direct bosishlar</small><b><%=Number(networkTotals.clicks||0).toLocaleString('uz-UZ')%></b><span><%=Number(networkTotals.ctr||0).toFixed(2)%>% CTR</span></div>
+      <div><small>Bloklangan/fallback</small><b><%=Number(networkTotals.fallbacks||0).toLocaleString('uz-UZ')%></b><span>Bo‘sh joysiz Direct Link</span></div>
+      <div class="network-income"><small>Taxminiy daromad</small><b>$<%=Number(networkTotals.revenue||0).toFixed(4)%></b><span>$<%=Number(config.networkEcpm||0).toFixed(2)%> eCPM bo‘yicha</span></div>
+    </div>
+    <%if(networkPlacements.length){const placeNames={feed:'Feed',explore:'Qidiruv',profile:'Profil',post_detail:'Post',chat_list:'Chatlar',chat_thread:'Suhbat'};%><div class="network-placement-list"><%networkPlacements.forEach(x=>{%><span><b><%=placeNames[x._id]||x._id%></b><small><%=x.impressions%> ko‘rish · <%=x.clicks%> click · $<%=Number(x.revenue||0).toFixed(4)%></small></span><%})%></div><%}%>
+    <p class="network-income-note"><i data-lucide="info"></i> Bu Lumi hisoblagan taxmin. Adsterra’dagi yakuniy payout, geo, fill-rate va reklama turiga qarab farq qiladi.</p>
   </section>
   <div class="ad-admin-layout">
-    <section class="admin-panel card ad-campaign-list"><div class="admin-panel-head"><div><span class="settings-kicker">CAMPAIGNS</span><h2>Kampaniyalar</h2></div><b class="admin-count"><%=campaigns.length%></b></div>
-      <%if(!campaigns.length){%><div class="admin-empty"><i data-lucide="badge-dollar-sign"></i><b>Reklama hali yo‘q</b><small>Birinchi reklama kampaniyasini yarating.</small><a class="btn primary" href="/admin/ads/new">Yaratish</a></div><%}%>
+    <section class="admin-panel card ad-campaign-list"><div class="admin-panel-head"><div><span class="settings-kicker">DIRECT CAMPAIGNS</span><h2>Ichki kampaniyalar</h2></div><b class="admin-count"><%=campaigns.length%></b></div>
+      <%if(!campaigns.length){%><div class="admin-empty"><i data-lucide="badge-dollar-sign"></i><b>Ichki kampaniya hali yo‘q</b><small>Adsterra ishlashda davom etadi. Maxsus reklama uchun kampaniya yarating.</small><a class="btn primary" href="/admin/ads/new">Yaratish</a></div><%}%>
       <%campaigns.forEach(ad=>{const ctr=ad.impressions?ad.clicks/ad.impressions*100:0;const budgetPct=ad.budget?Math.min(100,ad.spent/ad.budget*100):0;%><article class="ad-campaign-row">
         <img src="<%=ad.thumbUrl||ad.imageUrl%>" alt=""><div class="ad-campaign-main"><div><span class="ad-status <%=ad.status%>"><%=ad.status%></span><small><%=ad.placements.join(' · ')%></small></div><h3><%=ad.name%></h3><p><b><%=ad.advertiserName%></b> · <%=ad.title%></p><div class="ad-mini-metrics"><span><b><%=ad.impressions||0%></b> ko‘rish</span><span><b><%=ad.clicks||0%></b> click</span><span><b><%=ctr.toFixed(2)%>%</b> CTR</span><span><b>$<%=Number(ad.revenue||0).toFixed(2)%></b> daromad</span></div><%if(ad.budget){%><div class="ad-budget"><i style="width:<%=budgetPct%>%"></i></div><small>Budjet: $<%=Number(ad.spent||0).toFixed(2)%> / $<%=Number(ad.budget).toFixed(2)%></small><%}%></div>
         <div class="ad-campaign-actions"><a class="btn ghost" href="/admin/ads/<%=ad._id%>/edit"><i data-lucide="pencil"></i> Tahrirlash</a><form method="post" action="/admin/ads/<%=ad._id%>/status"><select name="status"><%['draft','active','paused','ended'].forEach(s=>{%><option value="<%=s%>" <%=ad.status===s?'selected':''%>><%=s%></option><%})%></select><button class="btn primary">Saqlash</button></form></div>
@@ -25,9 +36,10 @@
         <label class="check-row"><input type="checkbox" name="profileEnabled" <%=config.profileEnabled?'checked':''%>><span><b>Profil bannerlari</b></span></label>
         <label class="check-row"><input type="checkbox" name="chatsEnabled" <%=config.chatsEnabled?'checked':''%>><span><b>Chat reklamasi</b></span></label>
         <label class="check-row"><input type="checkbox" name="networkEnabled" <%=config.networkEnabled?'checked':''%>><span><b>Adsterra fallback</b><small>Ichki kampaniya bo‘lmasa tarmoq banneri</small></span></label>
+        <label>Taxminiy Adsterra eCPM ($)<input type="number" name="networkEcpm" min="0" max="100" step="0.01" value="<%=Number(config.networkEcpm||0).toFixed(2)%>"><small>1000 ta real creative ko‘rsatishiga taxminiy daromad</small></label>
         <button class="btn primary full"><i data-lucide="save"></i> Sozlamalarni saqlash</button>
       </form></section>
-      <section class="admin-panel card"><div class="admin-panel-head"><div><span class="settings-kicker">LAST 7 DAYS</span><h2>Faollik</h2></div></div><div class="ad-daily-list"><%if(!daily.length){%><small>Hali reklama eventi yo‘q.</small><%}%><%daily.forEach(x=>{%><div><span><%=x._id.day%></span><b><%=x._id.type%>: <%=x.count%></b><small>$<%=Number(x.revenue||0).toFixed(3)%></small></div><%})%></div></section>
+      <section class="admin-panel card"><div class="admin-panel-head"><div><span class="settings-kicker">LAST 7 DAYS</span><h2>Faollik</h2></div></div><div class="ad-daily-list"><%if(!daily.length&&!networkDaily.length){%><small>Hali reklama eventi yo‘q.</small><%}%><%daily.forEach(x=>{%><div><span><%=x._id.day%></span><b>Ichki · <%=x._id.type%>: <%=x.count%></b><small>$<%=Number(x.revenue||0).toFixed(3)%></small></div><%})%><%networkDaily.forEach(x=>{%><div class="network-daily"><span><%=x._id.day%></span><b>Adsterra · <%=x._id.type%>: <%=x.count%></b><small>$<%=Number(x.revenue||0).toFixed(4)%></small></div><%})%></div></section>
     </aside>
   </div>
 </main><%- include('../partials/footer') %>

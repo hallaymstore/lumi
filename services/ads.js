@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const AdCampaign = require('../models/AdCampaign');
 const AdEvent = require('../models/AdEvent');
 const AdConfig = require('../models/AdConfig');
+const NetworkAdEvent = require('../models/NetworkAdEvent');
 
 function getCookie(req, name) {
   for (const part of String(req.headers.cookie || '').split(';')) {
@@ -23,7 +24,9 @@ function visitorKey(req, res) {
 }
 
 async function getAdConfig() {
-  return AdConfig.findOneAndUpdate({ key: 'global' }, { $setOnInsert: { key: 'global' } }, { upsert: true, new: true, setDefaultsOnInsert: true }).lean();
+  const config = await AdConfig.findOneAndUpdate({ key: 'global' }, { $setOnInsert: { key: 'global' } }, { upsert: true, new: true, setDefaultsOnInsert: true }).lean();
+  if (!Number.isFinite(Number(config.networkEcpm))) config.networkEcpm = 0.5;
+  return config;
 }
 
 function decorate(ad) {
@@ -67,4 +70,20 @@ async function recordAdEvent(req, res, campaign, type, placement) {
   return { counted: true, revenue };
 }
 
-module.exports = { getAdConfig, getAdsForPlacement, recordAdEvent };
+async function recordNetworkAdEvent(req, res, { type, placement, format, providerState }) {
+  const viewer = visitorKey(req, res);
+  const config = await getAdConfig();
+  const revenue = type === 'impression' && providerState === 'provider' ? Number(config.networkEcpm || 0) / 1000 : 0;
+  try {
+    await NetworkAdEvent.create({
+      user: req.currentUser?._id || null, viewerKey: viewer, type, placement, format,
+      providerState, bucket: eventBucket(type), revenue
+    });
+  } catch (error) {
+    if (error?.code === 11000) return { counted: false, revenue: 0 };
+    throw error;
+  }
+  return { counted: true, revenue };
+}
+
+module.exports = { getAdConfig, getAdsForPlacement, recordAdEvent, recordNetworkAdEvent };
