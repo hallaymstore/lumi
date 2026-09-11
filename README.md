@@ -1,8 +1,12 @@
-# Lumi Social v1.6 — Production Social Core
+# Lumi Social v1.7 — Production Social + Monetization Core
 
 Mobile-first visual social network built with **Node.js + Express + MongoDB + Cloudflare R2 + EJS**.
 
-This version is an upgrade of v1.5 and keeps the compact Lumi UI while replacing the weak “latest posts only” feed with a personalized recommendation pipeline and adding the production features needed before deployment.
+This version keeps the personalized social core and adds a first-party advertising center for direct CPM/CPC campaigns.
+
+## Reklama va monetizatsiya
+
+Admin uchun `/admin/ads` reklama markazi mavjud. U Feed ichidagi native reklama, Explore va profil bannerlari, post sahifasi hamda chat joylashuvlarini boshqaradi. Kampaniyada auditoriya, vaqt oralig‘i, ustuvorlik, budjet, CPM/CPC narxi va CTA belgilanadi. Ko‘rsatishlar reklama kamida 55% ko‘ringandan so‘ng qayd etiladi, o‘tish tugmasi esa standart holatda 3 soniyadan keyin ochiladi.
 
 ## Main features
 

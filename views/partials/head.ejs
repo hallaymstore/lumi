@@ -30,6 +30,7 @@
   <script src="/js/realtime.js" defer></script>
   <script src="/js/pwa.js" defer></script>
   <script src="/js/v16.js" defer></script>
+  <script src="/js/ads.js" defer></script>
 </head>
 <body class="<%= /^\/chats\/[a-f0-9]{24}$/i.test(path || '') ? 'chat-detail-body' : '' %> <%= currentUser?.dataSaver ? 'data-saver' : '' %>" data-current-user-id="<%= currentUser?._id || '' %>" data-authenticated="<%= currentUser ? '1' : '0' %>">
 <div class="app-shell">

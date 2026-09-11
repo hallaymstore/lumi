@@ -1,6 +1,6 @@
 <%- include('../partials/head') %><%- include('../partials/topbar') %>
 <main class="content admin-page-v15">
-  <div class="admin-hero"><div><span class="settings-kicker">LUMI CONTROL CENTER · v1.6</span><h1>Admin panel</h1><p>Moderatsiya, foydalanuvchilar, engagement, Feed signallari va tizim holati.</p></div><a class="btn ghost" href="/feed"><i data-lucide="arrow-left"></i> Platformaga qaytish</a></div>
+  <div class="admin-hero"><div><span class="settings-kicker">LUMI CONTROL CENTER · v1.7</span><h1>Admin panel</h1><p>Moderatsiya, foydalanuvchilar, engagement, Feed signallari va tizim holati.</p></div><div class="admin-hero-actions"><a class="btn primary" href="/admin/ads"><i data-lucide="badge-dollar-sign"></i> Reklama markazi</a><a class="btn ghost" href="/feed"><i data-lucide="arrow-left"></i> Platformaga qaytish</a></div></div>
   <section class="admin-health-grid">
     <article class="health-card <%=system.mongo?'ok':'bad'%>"><i data-lucide="database"></i><div><b>MongoDB</b><small><%=system.mongo?'Ulangan':'Uzilgan'%></small></div></article>
     <article class="health-card <%=system.r2?'ok':'warn'%>"><i data-lucide="cloud"></i><div><b>Cloudflare R2</b><small><%=system.r2?'Sozlangan':'ENV tekshiring'%></small></div></article>

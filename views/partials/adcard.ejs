@@ -1,0 +1,18 @@
+<% const compactAd = variant === 'compact' || variant === 'banner'; %>
+<article class="ad-card <%=compactAd?'ad-compact':'ad-native'%> <%=variant==='banner'?'ad-banner':''%>" data-ad-card data-ad-id="<%=ad._id%>" data-ad-placement="<%=placement%>" data-ad-delay="<%=adConfig.ctaDelaySeconds||3%>">
+  <div class="ad-head">
+    <span class="ad-avatar"><i data-lucide="globe-2"></i></span>
+    <span class="ad-identity"><strong><%=ad.advertiserName%></strong><small><%=ad.domain%></small></span>
+    <span class="ad-sponsored"><i data-lucide="badge-info"></i> <%=adConfig.label||'Reklama'%></span>
+    <button type="button" class="ad-close" data-ad-dismiss aria-label="Reklamani yopish"><i data-lucide="x"></i></button>
+  </div>
+  <div class="ad-content">
+    <img class="ad-image" src="<%=ad.thumbUrl||ad.imageUrl%>" alt="<%=ad.title%>" loading="lazy">
+    <div class="ad-copy"><h3><%=ad.title%></h3><%if(ad.body){%><p><%=ad.body%></p><%}%>
+      <div class="ad-cta-row">
+        <span class="ad-wait" data-ad-wait><i data-lucide="timer"></i> <b data-ad-countdown><%=adConfig.ctaDelaySeconds||3%></b> soniyadan so‘ng</span>
+        <a class="ad-cta" data-ad-cta hidden href="/ads/<%=ad._id%>/go?placement=<%=placement%>" target="_blank" rel="nofollow sponsored noopener noreferrer"><%=ad.ctaText||"Saytga o'tish"%> <i data-lucide="arrow-up-right"></i></a>
+      </div>
+    </div>
+  </div>
+</article>

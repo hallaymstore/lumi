@@ -1,8 +1,8 @@
 {
   "name": "lumigirls-social",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "private": true,
-  "description": "Lumi v1.6 production social core with personalized feed ranking, scalable social collections, OTP-ready auth, Redis-aware realtime, web push, moderation, carousel posts, media lifecycle and creator analytics",
+  "description": "Lumi v1.7 production social platform with personalized feed, realtime chat, web push and a native CPM/CPC advertising center",
   "main": "app.js",
   "scripts": {
     "dev": "nodemon app.js",

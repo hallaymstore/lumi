@@ -1,0 +1,32 @@
+<%- include('../partials/head') %><%- include('../partials/topbar') %>
+<main class="content ad-admin-page">
+  <div class="admin-hero"><div><span class="settings-kicker">MONETIZATION CENTER</span><h1>Reklama markazi</h1><p>Feed, qidiruv, profil va chat reklamalarini bitta joydan boshqaring.</p></div><div class="admin-hero-actions"><a class="btn primary" href="/admin/ads/new"><i data-lucide="plus"></i> Kampaniya</a><a class="btn ghost" href="/admin"><i data-lucide="arrow-left"></i> Admin</a></div></div>
+  <section class="ad-admin-stats">
+    <article><span><i data-lucide="eye"></i></span><small>Ko‘rsatishlar</small><b><%=Number(totals.impressions||0).toLocaleString('uz-UZ')%></b></article>
+    <article><span><i data-lucide="mouse-pointer-click"></i></span><small>Bosishlar</small><b><%=Number(totals.clicks||0).toLocaleString('uz-UZ')%></b></article>
+    <article><span><i data-lucide="percent"></i></span><small>CTR</small><b><%=Number(totals.ctr||0).toFixed(2)%>%</b></article>
+    <article class="revenue"><span><i data-lucide="circle-dollar-sign"></i></span><small>Hisoblangan daromad</small><b>$<%=Number(totals.revenue||0).toFixed(2)%></b></article>
+  </section>
+  <div class="ad-admin-layout">
+    <section class="admin-panel card ad-campaign-list"><div class="admin-panel-head"><div><span class="settings-kicker">CAMPAIGNS</span><h2>Kampaniyalar</h2></div><b class="admin-count"><%=campaigns.length%></b></div>
+      <%if(!campaigns.length){%><div class="admin-empty"><i data-lucide="badge-dollar-sign"></i><b>Reklama hali yo‘q</b><small>Birinchi reklama kampaniyasini yarating.</small><a class="btn primary" href="/admin/ads/new">Yaratish</a></div><%}%>
+      <%campaigns.forEach(ad=>{const ctr=ad.impressions?ad.clicks/ad.impressions*100:0;const budgetPct=ad.budget?Math.min(100,ad.spent/ad.budget*100):0;%><article class="ad-campaign-row">
+        <img src="<%=ad.thumbUrl||ad.imageUrl%>" alt=""><div class="ad-campaign-main"><div><span class="ad-status <%=ad.status%>"><%=ad.status%></span><small><%=ad.placements.join(' · ')%></small></div><h3><%=ad.name%></h3><p><b><%=ad.advertiserName%></b> · <%=ad.title%></p><div class="ad-mini-metrics"><span><b><%=ad.impressions||0%></b> ko‘rish</span><span><b><%=ad.clicks||0%></b> click</span><span><b><%=ctr.toFixed(2)%>%</b> CTR</span><span><b>$<%=Number(ad.revenue||0).toFixed(2)%></b> daromad</span></div><%if(ad.budget){%><div class="ad-budget"><i style="width:<%=budgetPct%>%"></i></div><small>Budjet: $<%=Number(ad.spent||0).toFixed(2)%> / $<%=Number(ad.budget).toFixed(2)%></small><%}%></div>
+        <div class="ad-campaign-actions"><a class="btn ghost" href="/admin/ads/<%=ad._id%>/edit"><i data-lucide="pencil"></i> Tahrirlash</a><form method="post" action="/admin/ads/<%=ad._id%>/status"><select name="status"><%['draft','active','paused','ended'].forEach(s=>{%><option value="<%=s%>" <%=ad.status===s?'selected':''%>><%=s%></option><%})%></select><button class="btn primary">Saqlash</button></form></div>
+      </article><%})%>
+    </section>
+    <aside class="ad-admin-side">
+      <section class="admin-panel card"><div class="admin-panel-head"><div><span class="settings-kicker">DELIVERY RULES</span><h2>Ko‘rsatish sozlamalari</h2></div></div><form class="ad-settings-form" method="post" action="/admin/ads/settings">
+        <label class="check-row"><input type="checkbox" name="enabled" <%=config.enabled?'checked':''%>><span><b>Reklamalar faol</b><small>Barcha joylashuvlarni boshqaradi</small></span></label>
+        <label>Har nechta postdan keyin<input type="number" name="feedInterval" min="3" max="20" value="<%=config.feedInterval%>"></label>
+        <label>CTA kutish vaqti (soniya)<input type="number" name="ctaDelaySeconds" min="1" max="10" value="<%=config.ctaDelaySeconds%>"></label>
+        <label>Sahifadagi maksimal reklama<input type="number" name="maxAdsPerPage" min="1" max="20" value="<%=config.maxAdsPerPage%>"></label>
+        <label>Reklama belgisi<input name="label" maxlength="24" value="<%=config.label%>"></label>
+        <label class="check-row"><input type="checkbox" name="profileEnabled" <%=config.profileEnabled?'checked':''%>><span><b>Profil bannerlari</b></span></label>
+        <label class="check-row"><input type="checkbox" name="chatsEnabled" <%=config.chatsEnabled?'checked':''%>><span><b>Chat reklamasi</b></span></label>
+        <button class="btn primary full"><i data-lucide="save"></i> Sozlamalarni saqlash</button>
+      </form></section>
+      <section class="admin-panel card"><div class="admin-panel-head"><div><span class="settings-kicker">LAST 7 DAYS</span><h2>Faollik</h2></div></div><div class="ad-daily-list"><%if(!daily.length){%><small>Hali reklama eventi yo‘q.</small><%}%><%daily.forEach(x=>{%><div><span><%=x._id.day%></span><b><%=x._id.type%>: <%=x.count%></b><small>$<%=Number(x.revenue||0).toFixed(3)%></small></div><%})%></div></section>
+    </aside>
+  </div>
+</main><%- include('../partials/footer') %>
