@@ -85,6 +85,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!state || state.visibleSince || state.ready) return;
     const frame = slot.querySelector('[data-network-frame]');
     if (frame && !state.loaded) {
+      slot.classList.add('network-loading');
+      frame.addEventListener('load', () => {
+        slot.classList.remove('network-loading');
+        slot.classList.add('network-loaded');
+      }, { once: true });
       frame.src = innerWidth <= 640 ? frame.dataset.mobile : frame.dataset.desktop;
       state.loaded = true;
     }
@@ -98,6 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
         clearInterval(state.timer); state.timer = null;
         slot.querySelector('[data-network-lock]')?.setAttribute('hidden', '');
         slot.classList.add('network-ready');
+        window.lucide?.createIcons();
       }
     }, 150);
   };
