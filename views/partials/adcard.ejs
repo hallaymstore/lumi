@@ -1,4 +1,4 @@
-<% const compactAd = variant === 'compact' || variant === 'banner'; %>
+<% const compactAd = variant === 'compact' || variant === 'banner'; const creativeUrl=ad.thumbUrl||ad.imageUrl||''; %>
 <article class="ad-card <%=compactAd?'ad-compact':'ad-native'%> <%=variant==='banner'?'ad-banner':''%>" data-ad-card data-ad-id="<%=ad._id%>" data-ad-placement="<%=placement%>" data-ad-delay="<%=adConfig.ctaDelaySeconds||3%>">
   <header class="ad-head">
     <span class="ad-avatar"><b><%=(ad.advertiserName||'A').charAt(0).toUpperCase()%></b><i data-lucide="globe-2"></i></span>
@@ -7,7 +7,11 @@
     <button type="button" class="ad-close" data-ad-dismiss aria-label="Reklamani yopish"><i data-lucide="x"></i></button>
   </header>
   <div class="ad-content">
-    <div class="ad-image-wrap"><img class="ad-image" src="<%=ad.thumbUrl||ad.imageUrl%>" alt="<%=ad.title%>" loading="lazy"><span><i data-lucide="sparkles"></i> Tavsiya etiladi</span></div>
+    <div class="ad-image-wrap">
+      <div class="ad-image-fallback" aria-hidden="true"><b><%=(ad.advertiserName||'A').charAt(0).toUpperCase()%></b><strong><%=ad.title%></strong><small><%=ad.advertiserName%></small></div>
+      <%if(creativeUrl){%><img class="ad-image" src="<%=creativeUrl%>" alt="<%=ad.title%>" loading="lazy" decoding="async" onerror="this.remove()"><%}%>
+      <span class="ad-visual-badge"><i data-lucide="sparkles"></i> Homiylik kontenti</span>
+    </div>
     <div class="ad-copy"><h3><%=ad.title%></h3><%if(ad.body){%><p><%=ad.body%></p><%}%>
       <div class="ad-cta-row">
         <span class="ad-domain"><i data-lucide="link-2"></i> <%=ad.domain%></span>
