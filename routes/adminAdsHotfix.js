@@ -1,9 +1,8 @@
 const router = require('express').Router();
+const mongoose = require('mongoose');
 const multer = require('multer');
 const AdCampaign = require('../models/AdCampaign');
-const AdEvent = require('../models/AdEvent');
 const AdConfig = require('../models/AdConfig');
-const NetworkAdEvent = require('../models/NetworkAdEvent');
 const AdminLog = require('../models/AdminLog');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { uploadFile, deleteMany } = require('../services/r2');
@@ -25,7 +24,17 @@ async function logAction(req, action, targetType = '', targetId = '', details = 
   }).catch(() => {});
 }
 
-function campaignValue(req) {
+function clamp(n, min, max, fallback) {
+  n = Number(n);
+  return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
+}
+
+function parseTags(value) {
+  const raw = Array.isArray(value) ? value : String(value || '').split(',');
+  return [...new Set(raw.map(x => String(x || '').toLowerCase().trim().replace(/^#/, '').slice(0, 48)).filter(Boolean))].slice(0, 20);
+}
+
+function campaignValue(req, existing = {}) {
   const placementInput = Array.isArray(req.body.placements)
     ? req.body.placements
     : [req.body.placements].filter(Boolean);
@@ -33,14 +42,17 @@ function campaignValue(req) {
 
   let clickUrl;
   try {
-    clickUrl = new URL(String(req.body.clickUrl || ''));
+    clickUrl = new URL(String(req.body.clickUrl || existing.clickUrl || ''));
     if (!['http:', 'https:'].includes(clickUrl.protocol)) throw new Error();
   } catch (_) {
     throw new Error("Reklama havolasi http:// yoki https:// bilan boshlansin.");
   }
 
-  const startsAt = req.body.startsAt ? new Date(req.body.startsAt) : new Date();
+  const startsAt = req.body.startsAt ? new Date(req.body.startsAt) : (existing.startsAt || new Date());
   const endsAt = req.body.endsAt ? new Date(req.body.endsAt) : null;
+  if (Number.isNaN(startsAt.getTime()) || (endsAt && Number.isNaN(endsAt.getTime()))) {
+    throw new Error('Reklama sanasi noto‘g‘ri.');
+  }
   if (endsAt && endsAt <= startsAt) throw new Error('Tugash vaqti boshlanish vaqtidan keyin bo‘lsin.');
   if (!placements.length) throw new Error('Kamida bitta reklama joylashuvini tanlang.');
 
@@ -51,16 +63,34 @@ function campaignValue(req) {
     body: String(req.body.body || '').trim().slice(0, 260),
     clickUrl: clickUrl.toString(),
     ctaText: String(req.body.ctaText || "Saytga o'tish").trim().slice(0, 32),
+
+    category: String(req.body.category || '').toLowerCase().trim().replace(/^#/, '').slice(0, 48),
+    targetTags: parseTags(req.body.targetTags),
+    dailyFrequencyCap: clamp(req.body.dailyFrequencyCap, 1, 20, 3),
+    cooldownHours: clamp(req.body.cooldownHours, 0, 168, 6),
+    dismissCooldownHours: clamp(req.body.dismissCooldownHours, 1, 720, 72),
+
     placements,
     audience: ['all', 'guests', 'members'].includes(req.body.audience) ? req.body.audience : 'all',
     status: ['draft', 'active', 'paused', 'ended'].includes(req.body.status) ? req.body.status : 'draft',
     startsAt,
     endsAt,
-    priority: Math.min(10, Math.max(1, Number(req.body.priority) || 5)),
+    priority: clamp(req.body.priority, 1, 10, 5),
     priceModel: ['cpm', 'cpc', 'flat'].includes(req.body.priceModel) ? req.body.priceModel : 'cpm',
     unitPrice: Math.max(0, Number(req.body.unitPrice) || 0),
     budget: Math.max(0, Number(req.body.budget) || 0),
     updatedBy: req.currentUser._id
+  };
+}
+
+function campaignDraft(req, extra = {}) {
+  return {
+    ...extra,
+    ...req.body,
+    targetTags: parseTags(req.body.targetTags),
+    placements: Array.isArray(req.body.placements)
+      ? req.body.placements
+      : [req.body.placements].filter(Boolean)
   };
 }
 
@@ -73,80 +103,36 @@ function looksLikeCampaign(body = {}) {
   );
 }
 
-// Accurate monetization center: only genuine provider creatives count as
-// network impressions. No-fill/ad-block attempts remain visible separately.
-router.get('/admin/ads', requireAuth, requireAdmin, async (req, res) => {
-  const since = new Date(Date.now() - 7 * 864e5);
-  const [campaigns, config, summary, daily, networkSummary, networkDaily, networkPlacements] = await Promise.all([
-    AdCampaign.find().sort({ status: 1, priority: -1, updatedAt: -1 }).lean(),
-    getAdConfig(),
-    AdCampaign.aggregate([{ $group: { _id: null, impressions: { $sum: '$impressions' }, clicks: { $sum: '$clicks' }, revenue: { $sum: '$revenue' }, budget: { $sum: '$budget' } } }]),
-    AdEvent.aggregate([
-      { $match: { createdAt: { $gte: since } } },
-      { $group: { _id: { day: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, type: '$type' }, count: { $sum: 1 }, revenue: { $sum: '$revenue' } } },
-      { $sort: { '_id.day': 1 } }
-    ]),
-    NetworkAdEvent.aggregate([{ $group: {
-      _id: null,
-      providerImpressions: { $sum: { $cond: [{ $and: [{ $eq: ['$type', 'impression'] }, { $eq: ['$providerState', 'provider'] }] }, 1, 0] } },
-      fallbacks: { $sum: { $cond: [{ $and: [{ $eq: ['$type', 'impression'] }, { $eq: ['$providerState', 'fallback'] }] }, 1, 0] } },
-      clicks: { $sum: { $cond: [{ $eq: ['$type', 'click'] }, 1, 0] } },
-      revenue: { $sum: '$revenue' }
-    } }]),
-    NetworkAdEvent.aggregate([
-      { $match: { createdAt: { $gte: since }, $or: [{ type: 'click' }, { type: 'impression', providerState: 'provider' }] } },
-      { $group: { _id: { day: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, type: '$type' }, count: { $sum: 1 }, revenue: { $sum: '$revenue' } } },
-      { $sort: { '_id.day': 1 } }
-    ]),
-    NetworkAdEvent.aggregate([{ $group: {
-      _id: '$placement',
-      impressions: { $sum: { $cond: [{ $and: [{ $eq: ['$type', 'impression'] }, { $eq: ['$providerState', 'provider'] }] }, 1, 0] } },
-      clicks: { $sum: { $cond: [{ $eq: ['$type', 'click'] }, 1, 0] } },
-      revenue: { $sum: '$revenue' }
-    } }, { $sort: { impressions: -1 } }])
-  ]);
+async function renderAdForm(req, res, { campaign = null, error = null, status = 200 } = {}) {
+  return res.status(status).render('admin/ad-form', {
+    title: campaign?._id ? 'Reklamani tahrirlash' : 'Yangi reklama',
+    campaign,
+    error
+  });
+}
 
-  const internalTotals = summary[0] || { impressions: 0, clicks: 0, revenue: 0, budget: 0 };
-  const rawNetwork = networkSummary[0] || { providerImpressions: 0, fallbacks: 0, clicks: 0, revenue: 0 };
-  const networkTotals = {
-    impressions: Number(rawNetwork.providerImpressions || 0),
-    providerImpressions: Number(rawNetwork.providerImpressions || 0),
-    fallbacks: Number(rawNetwork.fallbacks || 0),
-    clicks: Number(rawNetwork.clicks || 0),
-    revenue: Number(rawNetwork.revenue || 0)
-  };
-  networkTotals.ctr = networkTotals.impressions ? networkTotals.clicks / networkTotals.impressions * 100 : 0;
-
-  const totals = {
-    impressions: Number(internalTotals.impressions || 0) + networkTotals.impressions,
-    clicks: Number(internalTotals.clicks || 0) + networkTotals.clicks,
-    revenue: Number(internalTotals.revenue || 0) + networkTotals.revenue,
-    budget: Number(internalTotals.budget || 0)
-  };
-  totals.ctr = totals.impressions ? totals.clicks / totals.impressions * 100 : 0;
-
-  res.set('Cache-Control', 'no-store');
-  res.render('admin/ads', {
-    title: 'Reklama markazi', campaigns, config, totals, internalTotals, daily,
-    networkTotals, networkDaily, networkPlacements
+router.get('/admin/api/ad-smart-config', requireAuth, requireAdmin, async (req, res) => {
+  const config = await getAdConfig();
+  res.set('Cache-Control', 'no-store').json({
+    smartDelivery: config.smartDelivery !== false,
+    firstAdMin: config.firstAdMin || 5,
+    firstAdMax: config.firstAdMax || 6,
+    gapMin: config.gapMin || 4,
+    gapMax: config.gapMax || 7,
+    maxAdsPerPage: config.maxAdsPerPage || 6
   });
 });
 
-// A GET on this URL used to fall into the broken campaign edit flow. Send admins
-// back to the monetization center instead of ever treating "settings" as an ObjectId.
 router.get('/admin/ads/settings', requireAuth, requireAdmin, (req, res) => {
   res.redirect('/admin/ads');
 });
 
-// This exact route MUST run before /admin -> /ads/:id. It also recovers a campaign
-// submitted from the stale broken page that previously used _id="settings".
 router.post('/admin/ads/settings', requireAuth, requireAdmin, adUpload.single('image'), async (req, res) => {
   let uploaded = null;
   try {
     if (looksLikeCampaign(req.body)) {
       const data = campaignValue(req);
       if (!req.file) throw new Error('Reklama rasmi tanlanishi kerak.');
-
       uploaded = await uploadFile(req.file, 'ads', { maxEdge: 1600, quality: 86 });
       const campaign = await AdCampaign.create({
         ...data,
@@ -160,46 +146,110 @@ router.post('/admin/ads/settings', requireAuth, requireAdmin, adUpload.single('i
       return res.redirect('/admin/ads');
     }
 
+    const currentConfig = await getAdConfig();
+    const firstMin = clamp(req.body.firstAdMin, 3, 12, currentConfig.firstAdMin || 5);
+    const firstMax = clamp(req.body.firstAdMax, firstMin, 14, currentConfig.firstAdMax || 6);
+    const gapMin = clamp(req.body.gapMin, 3, 15, currentConfig.gapMin || 4);
+    const gapMax = clamp(req.body.gapMax, gapMin, 20, currentConfig.gapMax || 7);
+    const smartDelivery = req.body.smartDelivery === undefined
+      ? currentConfig.smartDelivery !== false
+      : req.body.smartDelivery === 'on';
+
     await AdConfig.findOneAndUpdate(
       { key: 'global' },
       {
         $set: {
           enabled: req.body.enabled === 'on',
-          feedInterval: Math.min(20, Math.max(3, Number(req.body.feedInterval) || 5)),
-          ctaDelaySeconds: Math.min(10, Math.max(1, Number(req.body.ctaDelaySeconds) || 3)),
-          maxAdsPerPage: Math.min(20, Math.max(1, Number(req.body.maxAdsPerPage) || 8)),
+          feedInterval: clamp(req.body.feedInterval, 3, 20, 5),
+          smartDelivery,
+          firstAdMin: firstMin,
+          firstAdMax: firstMax,
+          gapMin,
+          gapMax,
+          ctaDelaySeconds: clamp(req.body.ctaDelaySeconds, 1, 10, 3),
+          maxAdsPerPage: clamp(req.body.maxAdsPerPage, 1, 20, 6),
           profileEnabled: req.body.profileEnabled === 'on',
           chatsEnabled: req.body.chatsEnabled === 'on',
           networkEnabled: req.body.networkEnabled === 'on',
-          networkEcpm: Math.min(100, Math.max(0, Number(req.body.networkEcpm) || 0)),
+          networkEcpm: clamp(req.body.networkEcpm, 0, 100, 0),
           label: String(req.body.label || 'Reklama').trim().slice(0, 24),
           updatedBy: req.currentUser._id
         }
       },
       { upsert: true }
     );
-    await logAction(req, 'ad.settings', 'ad_config', 'global', 'Reklama sozlamalari yangilandi');
+    await logAction(req, 'ad.settings', 'ad_config', 'global', 'Smart Ad Delivery sozlamalari yangilandi');
     return res.redirect('/admin/ads');
   } catch (error) {
     if (uploaded) deleteMany([uploaded.key, uploaded.thumbKey]).catch(() => {});
-
     if (looksLikeCampaign(req.body)) {
-      return res.status(400).render('admin/ad-form', {
-        title: 'Yangi reklama',
-        campaign: {
-          ...req.body,
-          placements: Array.isArray(req.body.placements)
-            ? req.body.placements
-            : [req.body.placements].filter(Boolean)
-        },
-        error: error.message || 'Reklama saqlanmadi.'
+      return renderAdForm(req, res, {
+        campaign: campaignDraft(req),
+        error: error.message || 'Reklama saqlanmadi.',
+        status: 400
       });
     }
+    console.error('Ad settings:', error);
+    return res.status(500).render('error', { title: 'Xatolik', message: 'Reklama sozlamalari saqlanmadi.' });
+  }
+});
 
-    console.error('Ad settings hotfix:', error);
-    return res.status(500).render('error', {
-      title: 'Xatolik',
-      message: 'Reklama sozlamalari saqlanmadi.'
+router.post('/admin/ads', requireAuth, requireAdmin, adUpload.single('image'), async (req, res) => {
+  let uploaded = null;
+  try {
+    const data = campaignValue(req);
+    if (!req.file) throw new Error('Reklama rasmi tanlanishi kerak.');
+    uploaded = await uploadFile(req.file, 'ads', { maxEdge: 1600, quality: 86 });
+    const campaign = await AdCampaign.create({
+      ...data,
+      imageUrl: uploaded.url,
+      imageKey: uploaded.key,
+      thumbUrl: uploaded.thumbUrl || uploaded.url,
+      thumbKey: uploaded.thumbKey || '',
+      createdBy: req.currentUser._id
+    });
+    await logAction(req, 'ad.create.smart', 'ad', campaign._id, campaign.name);
+    return res.redirect('/admin/ads');
+  } catch (error) {
+    if (uploaded) deleteMany([uploaded.key, uploaded.thumbKey]).catch(() => {});
+    return renderAdForm(req, res, {
+      campaign: campaignDraft(req),
+      error: error.message || 'Reklama saqlanmadi.',
+      status: 400
+    });
+  }
+});
+
+router.post('/admin/ads/:id', requireAuth, requireAdmin, adUpload.single('image'), async (req, res, next) => {
+  if (!mongoose.isValidObjectId(req.params.id)) return next();
+  let uploaded = null;
+  try {
+    const campaign = await AdCampaign.findById(req.params.id);
+    if (!campaign) return res.sendStatus(404);
+
+    const data = campaignValue(req, campaign);
+    const oldKeys = [];
+    if (req.file) {
+      uploaded = await uploadFile(req.file, 'ads', { maxEdge: 1600, quality: 86 });
+      data.imageUrl = uploaded.url;
+      data.imageKey = uploaded.key;
+      data.thumbUrl = uploaded.thumbUrl || uploaded.url;
+      data.thumbKey = uploaded.thumbKey || '';
+      oldKeys.push(campaign.imageKey, campaign.thumbKey);
+    }
+
+    Object.assign(campaign, data);
+    await campaign.save();
+    if (oldKeys.length) deleteMany(oldKeys).catch(() => {});
+    await logAction(req, 'ad.update.smart', 'ad', campaign._id, campaign.name);
+    return res.redirect('/admin/ads');
+  } catch (error) {
+    if (uploaded) deleteMany([uploaded.key, uploaded.thumbKey]).catch(() => {});
+    const existing = await AdCampaign.findById(req.params.id).lean().catch(() => null);
+    return renderAdForm(req, res, {
+      campaign: campaignDraft(req, { _id: req.params.id, imageUrl: existing?.imageUrl, thumbUrl: existing?.thumbUrl }),
+      error: error.message || 'Reklama yangilanmadi.',
+      status: 400
     });
   }
 });

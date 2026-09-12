@@ -1,6 +1,6 @@
 <%- include('../partials/head') %><%- include('../partials/topbar') %>
-<%const editing=!!campaign?._id;const selected=Array.isArray(campaign?.placements)?campaign.placements:[];const dt=v=>v?new Date(v).toISOString().slice(0,16):'';%>
-<main class="content ad-form-page"><div class="admin-hero"><div><span class="settings-kicker">AD CAMPAIGN</span><h1><%=editing?'Reklamani tahrirlash':'Yangi reklama'%></h1><p>Postga o‘xshash premium format, aniq reklama belgisi va 3 soniyalik CTA.</p></div><a class="btn ghost" href="/admin/ads"><i data-lucide="arrow-left"></i> Reklama markazi</a></div>
+<%const editing=!!campaign?._id;const selected=Array.isArray(campaign?.placements)?campaign.placements:[];const dt=v=>v?new Date(v).toISOString().slice(0,16):'';const targetTags=Array.isArray(campaign?.targetTags)?campaign.targetTags.join(', '):(campaign?.targetTags||'');%>
+<main class="content ad-form-page"><div class="admin-hero"><div><span class="settings-kicker">AD CAMPAIGN</span><h1><%=editing?'Reklamani tahrirlash':'Yangi reklama'%></h1><p>Postga o‘xshash premium format, Smart Targeting va frequency-cap bilan.</p></div><a class="btn ghost" href="/admin/ads"><i data-lucide="arrow-left"></i> Reklama markazi</a></div>
   <%if(error){%><div class="form-error"><i data-lucide="circle-alert"></i><%=error%></div><%}%>
   <form class="ad-campaign-form" method="post" enctype="multipart/form-data" action="<%=editing?'/admin/ads/'+campaign._id:'/admin/ads'%>">
     <section class="admin-panel card"><div class="admin-panel-head"><div><span class="settings-kicker">CREATIVE</span><h2>Reklama ko‘rinishi</h2></div></div><div class="ad-form-grid">
@@ -13,6 +13,15 @@
       <label class="wide">Reklama rasmi <small><%=editing?'Yangi fayl tanlanmasa eski rasm qoladi.':'JPG, PNG, WEBP yoki AVIF · 10 MB gacha'%></small><input type="file" name="image" accept="image/jpeg,image/png,image/webp,image/avif" <%=editing?'':'required'%>></label>
       <%if(editing&&campaign.imageUrl){%><img class="ad-edit-preview" src="<%=campaign.thumbUrl||campaign.imageUrl%>" alt=""><%}%>
     </div></section>
+
+    <section class="admin-panel card"><div class="admin-panel-head"><div><span class="settings-kicker">SMART TARGETING</span><h2>Qiziqish va zeriktirmaslik</h2></div></div><div class="ad-form-grid">
+      <label>Kategoriya<input name="category" maxlength="48" value="<%=campaign?.category||''%>" placeholder="beauty, fashion, coding..."><small>Post taglari bilan bir xil so‘z ishlatilsa matching kuchliroq bo‘ladi.</small></label>
+      <label>Target taglar<input name="targetTags" maxlength="500" value="<%=targetTags%>" placeholder="beauty, skincare, uzbekgirls"><small>Vergul bilan ajrating.</small></label>
+      <label>Bir userga kunlik limit<input type="number" name="dailyFrequencyCap" min="1" max="20" value="<%=campaign?.dailyFrequencyCap||3%>"><small>Tavsiya: 3 marta/kun.</small></label>
+      <label>Qayta ko‘rsatish oralig‘i (soat)<input type="number" name="cooldownHours" min="0" max="168" value="<%=campaign?.cooldownHours??6%>"><small>Tavsiya: 6 soat.</small></label>
+      <label class="wide">User yopsa qayta ko‘rsatmaslik (soat)<input type="number" name="dismissCooldownHours" min="1" max="720" value="<%=campaign?.dismissCooldownHours||72%>"><small>Tavsiya: 72 soat. Yopilgan reklama bir muddat dam oladi.</small></label>
+    </div></section>
+
     <section class="admin-panel card"><div class="admin-panel-head"><div><span class="settings-kicker">DELIVERY</span><h2>Kimga va qayerda</h2></div></div><div class="ad-placement-grid"><%const labels={feed:'Feed ichida',explore:'Qidiruvda',profile:'Profil banneri',post_detail:'Post sahifasi',chat_list:'Chatlar ro‘yxati',chat_thread:'Suhbat ostida'};Object.entries(labels).forEach(([value,label])=>{%><label><input type="checkbox" name="placements" value="<%=value%>" <%=selected.includes(value)?'checked':''%>><span><i data-lucide="<%=value==='feed'?'layout-list':value==='explore'?'compass':value==='profile'?'user-round':value==='post_detail'?'panel-top':value==='chat_list'?'messages-square':'message-circle'%>"></i><b><%=label%></b></span></label><%})%></div><div class="ad-form-grid">
       <label>Auditoriya<select name="audience"><%[['all','Barchasi'],['guests','Faqat mehmonlar'],['members','Faqat a’zolar']].forEach(x=>{%><option value="<%=x[0]%>" <%=campaign?.audience===x[0]?'selected':''%>><%=x[1]%></option><%})%></select></label>
       <label>Holati<select name="status"><%['draft','active','paused','ended'].forEach(s=>{%><option value="<%=s%>" <%=campaign?.status===s?'selected':''%>><%=s%></option><%})%></select></label>
@@ -20,6 +29,7 @@
       <label>Tugash (ixtiyoriy)<input type="datetime-local" name="endsAt" value="<%=dt(campaign?.endsAt)%>"></label>
       <label>Ustuvorlik (1–10)<input type="number" name="priority" min="1" max="10" value="<%=campaign?.priority||5%>"></label>
     </div></section>
+
     <section class="admin-panel card"><div class="admin-panel-head"><div><span class="settings-kicker">REVENUE</span><h2>Daromad hisobi</h2></div></div><div class="ad-form-grid">
       <label>Hisoblash modeli<select name="priceModel"><option value="cpm" <%=campaign?.priceModel==='cpm'?'selected':''%>>CPM — 1000 ko‘rsatish</option><option value="cpc" <%=campaign?.priceModel==='cpc'?'selected':''%>>CPC — har bir bosish</option><option value="flat" <%=campaign?.priceModel==='flat'?'selected':''%>>Flat — kelishilgan narx</option></select></label>
       <label>Birlik narxi ($)<input type="number" name="unitPrice" min="0" step="0.001" value="<%=campaign?.unitPrice||0%>"></label>

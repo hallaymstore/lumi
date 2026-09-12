@@ -13,6 +13,14 @@ const adCampaignSchema = new mongoose.Schema({
   thumbKey: { type: String, default: '' },
   clickUrl: { type: String, required: true, trim: true },
   ctaText: { type: String, trim: true, maxlength: 32, default: "Saytga o'tish" },
+
+  // Smart targeting. Tags should use the same vocabulary as Post.tags when possible.
+  category: { type: String, lowercase: true, trim: true, maxlength: 48, default: '' },
+  targetTags: [{ type: String, lowercase: true, trim: true, maxlength: 48 }],
+  dailyFrequencyCap: { type: Number, min: 1, max: 20, default: 3 },
+  cooldownHours: { type: Number, min: 0, max: 168, default: 6 },
+  dismissCooldownHours: { type: Number, min: 1, max: 720, default: 72 },
+
   placements: [{ type: String, enum: placements }],
   audience: { type: String, enum: ['all', 'guests', 'members'], default: 'all' },
   status: { type: String, enum: ['draft', 'active', 'paused', 'ended'], default: 'draft', index: true },
@@ -32,5 +40,6 @@ const adCampaignSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 adCampaignSchema.index({ status: 1, placements: 1, startsAt: 1, endsAt: 1, priority: -1 });
+adCampaignSchema.index({ status: 1, category: 1, targetTags: 1 });
 module.exports = mongoose.model('AdCampaign', adCampaignSchema);
 module.exports.PLACEMENTS = placements;
