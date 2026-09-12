@@ -43,41 +43,75 @@ router.get('/ads/network/:format', (req, res) => {
   const providerUrl = format.type === 'native'
     ? format.src
     : `https://www.highperformanceformat.com/${format.key}/invoke.js`;
-  const container = format.type === 'native'
-    ? `<div id="${format.container}" class="native-slot" aria-label="Sponsored content"></div>`
-    : '';
-  const setup = format.type === 'native'
-    ? ''
-    : `window.atOptions={key:${JSON.stringify(format.key)},format:'iframe',height:${format.height},width:${format.width},params:{}};`;
 
-  // This document contains only a third-party ad unit. Keep it isolated from the
-  // application and permissive enough for provider subresources to load.
   res.set({
     'Cache-Control': 'no-store, max-age=0',
-    'Content-Security-Policy': "default-src 'none'; script-src 'unsafe-inline' https:; frame-src https:; child-src https:; connect-src https:; img-src https: data: blob:; media-src https: data: blob:; style-src 'unsafe-inline'; font-src https: data:; base-uri 'none'; form-action https:",
+    'Content-Security-Policy': "default-src 'none'; script-src 'unsafe-inline' https:; frame-src https:; child-src https:; connect-src https:; img-src https: data: blob:; media-src https: data: blob:; style-src 'unsafe-inline' https:; font-src https: data:; base-uri 'none'; form-action https:",
     'Referrer-Policy': 'no-referrer-when-downgrade',
     'X-Robots-Tag': 'noindex, nofollow, noarchive'
   });
 
+  const container = format.type === 'native'
+    ? `<div id="${format.container}" class="native-slot" aria-label="Sponsored content"></div>`
+    : '';
+  const options = format.type === 'banner'
+    ? `<script>window.atOptions={key:${JSON.stringify(format.key)},format:'iframe',height:${format.height},width:${format.width},params:{}};<\/script>`
+    : '';
+
+  // Adsterra banner scripts commonly rely on synchronous document.write behavior.
+  // Rendering the provider script as a normal parser-blocking script is therefore
+  // substantially more reliable than appending it asynchronously after page load.
   const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base target="_blank"><style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}body{display:grid;place-items:center}.native-slot{width:100%;height:100%;overflow:hidden;display:grid;place-items:center}iframe,img{max-width:100%}
-</style></head><body>${container}<script>(()=>{
-let settled=false;
-const notify=(state,detail='')=>{if(settled)return;if(state==='ready'||state==='empty'||state==='error')settled=true;try{parent.postMessage({type:'lumi-adsterra',state,format:${JSON.stringify(formatName)},detail},'*')}catch(_){}};
-${setup}
-const creativePresent=()=>{
-  if(${JSON.stringify(format.type)}==='native'){
-    const box=document.getElementById(${JSON.stringify(format.container)});
-    return !!box && (box.childElementCount>0 || !!box.querySelector('iframe,a[href],img[src]'));
-  }
-  return !!document.querySelector('iframe,a[href],img[src]');
-};
-const watch=()=>{if(creativePresent()){notify('ready','creative-detected');return true}return false};
-const observer=new MutationObserver(()=>watch());observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['src','href']});
-const script=document.createElement('script');script.async=true;script.src=${JSON.stringify(providerUrl)};script.onload=()=>setTimeout(watch,60);script.onerror=()=>notify('error','provider-script');document.body.appendChild(script);
-const poll=setInterval(()=>{if(settled){clearInterval(poll);observer.disconnect();return}watch()},220);
-setTimeout(()=>{clearInterval(poll);observer.disconnect();if(!settled)notify('empty','timeout')},6800);
-})();<\/script></body></html>`;
+</style></head><body>${container}
+<script>
+(()=>{
+  let settled=false;
+  const notify=(state,detail='')=>{
+    if(settled)return;
+    if(state==='ready'||state==='empty'||state==='error')settled=true;
+    try{parent.postMessage({type:'lumi-adsterra',state,format:${JSON.stringify(formatName)},detail},'*')}catch(_){}
+  };
+  window.__lumiAdNotify=notify;
+  window.__lumiAdCreativePresent=()=>{
+    if(${JSON.stringify(format.type)}==='native'){
+      const box=document.getElementById(${JSON.stringify(format.container)});
+      return !!box && (box.childElementCount>0 || !!box.querySelector('iframe,a[href],img[src]'));
+    }
+    return !!document.querySelector('iframe,a[href],img[src]');
+  };
+  const observer=new MutationObserver(()=>{
+    if(!settled&&window.__lumiAdCreativePresent())notify('ready','creative-detected');
+  });
+  observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['src','href','style']});
+  window.__lumiAdObserver=observer;
+})();
+<\/script>
+${options}
+<script src="${providerUrl}" onerror="window.__lumiAdNotify&&window.__lumiAdNotify('error','provider-script')"><\/script>
+<script>
+(()=>{
+  const check=()=>{
+    if(window.__lumiAdCreativePresent&&window.__lumiAdCreativePresent()){
+      window.__lumiAdNotify('ready','creative-detected');
+      return true;
+    }
+    return false;
+  };
+  if(!check()){
+    let tries=0;
+    const poll=setInterval(()=>{
+      tries++;
+      if(check()||tries>=32){
+        clearInterval(poll);
+        if(tries>=32&&!check())window.__lumiAdNotify('empty','no-fill');
+        window.__lumiAdObserver?.disconnect();
+      }
+    },250);
+  }else window.__lumiAdObserver?.disconnect();
+})();
+<\/script>
+</body></html>`;
 
   res.type('html').send(html);
 });
