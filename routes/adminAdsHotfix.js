@@ -1,10 +1,13 @@
 const router = require('express').Router();
 const multer = require('multer');
 const AdCampaign = require('../models/AdCampaign');
+const AdEvent = require('../models/AdEvent');
 const AdConfig = require('../models/AdConfig');
+const NetworkAdEvent = require('../models/NetworkAdEvent');
 const AdminLog = require('../models/AdminLog');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { uploadFile, deleteMany } = require('../services/r2');
+const { getAdConfig } = require('../services/ads');
 
 const adUpload = multer({
   storage: multer.memoryStorage(),
@@ -69,6 +72,65 @@ function looksLikeCampaign(body = {}) {
     String(body.clickUrl || '').trim()
   );
 }
+
+// Accurate monetization center: only genuine provider creatives count as
+// network impressions. No-fill/ad-block attempts remain visible separately.
+router.get('/admin/ads', requireAuth, requireAdmin, async (req, res) => {
+  const since = new Date(Date.now() - 7 * 864e5);
+  const [campaigns, config, summary, daily, networkSummary, networkDaily, networkPlacements] = await Promise.all([
+    AdCampaign.find().sort({ status: 1, priority: -1, updatedAt: -1 }).lean(),
+    getAdConfig(),
+    AdCampaign.aggregate([{ $group: { _id: null, impressions: { $sum: '$impressions' }, clicks: { $sum: '$clicks' }, revenue: { $sum: '$revenue' }, budget: { $sum: '$budget' } } }]),
+    AdEvent.aggregate([
+      { $match: { createdAt: { $gte: since } } },
+      { $group: { _id: { day: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, type: '$type' }, count: { $sum: 1 }, revenue: { $sum: '$revenue' } } },
+      { $sort: { '_id.day': 1 } }
+    ]),
+    NetworkAdEvent.aggregate([{ $group: {
+      _id: null,
+      providerImpressions: { $sum: { $cond: [{ $and: [{ $eq: ['$type', 'impression'] }, { $eq: ['$providerState', 'provider'] }] }, 1, 0] } },
+      fallbacks: { $sum: { $cond: [{ $and: [{ $eq: ['$type', 'impression'] }, { $eq: ['$providerState', 'fallback'] }] }, 1, 0] } },
+      clicks: { $sum: { $cond: [{ $eq: ['$type', 'click'] }, 1, 0] } },
+      revenue: { $sum: '$revenue' }
+    } }]),
+    NetworkAdEvent.aggregate([
+      { $match: { createdAt: { $gte: since }, $or: [{ type: 'click' }, { type: 'impression', providerState: 'provider' }] } },
+      { $group: { _id: { day: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, type: '$type' }, count: { $sum: 1 }, revenue: { $sum: '$revenue' } } },
+      { $sort: { '_id.day': 1 } }
+    ]),
+    NetworkAdEvent.aggregate([{ $group: {
+      _id: '$placement',
+      impressions: { $sum: { $cond: [{ $and: [{ $eq: ['$type', 'impression'] }, { $eq: ['$providerState', 'provider'] }] }, 1, 0] } },
+      clicks: { $sum: { $cond: [{ $eq: ['$type', 'click'] }, 1, 0] } },
+      revenue: { $sum: '$revenue' }
+    } }, { $sort: { impressions: -1 } }])
+  ]);
+
+  const internalTotals = summary[0] || { impressions: 0, clicks: 0, revenue: 0, budget: 0 };
+  const rawNetwork = networkSummary[0] || { providerImpressions: 0, fallbacks: 0, clicks: 0, revenue: 0 };
+  const networkTotals = {
+    impressions: Number(rawNetwork.providerImpressions || 0),
+    providerImpressions: Number(rawNetwork.providerImpressions || 0),
+    fallbacks: Number(rawNetwork.fallbacks || 0),
+    clicks: Number(rawNetwork.clicks || 0),
+    revenue: Number(rawNetwork.revenue || 0)
+  };
+  networkTotals.ctr = networkTotals.impressions ? networkTotals.clicks / networkTotals.impressions * 100 : 0;
+
+  const totals = {
+    impressions: Number(internalTotals.impressions || 0) + networkTotals.impressions,
+    clicks: Number(internalTotals.clicks || 0) + networkTotals.clicks,
+    revenue: Number(internalTotals.revenue || 0) + networkTotals.revenue,
+    budget: Number(internalTotals.budget || 0)
+  };
+  totals.ctr = totals.impressions ? totals.clicks / totals.impressions * 100 : 0;
+
+  res.set('Cache-Control', 'no-store');
+  res.render('admin/ads', {
+    title: 'Reklama markazi', campaigns, config, totals, internalTotals, daily,
+    networkTotals, networkDaily, networkPlacements
+  });
+});
 
 // A GET on this URL used to fall into the broken campaign edit flow. Send admins
 // back to the monetization center instead of ever treating "settings" as an ObjectId.
