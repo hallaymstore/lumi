@@ -1,0 +1,41 @@
+/* Lumi v1.7.6 — real network creative presentation */
+.network-ad-card.network-no-fill{display:none!important}
+.network-provider-ready .network-backdrop{display:none!important}
+.network-provider-ready .network-frame-shell iframe{opacity:1!important;visibility:visible!important;pointer-events:auto!important}
+.network-provider-ready .network-frame-wrap{background:linear-gradient(135deg,#18111d,#211628)!important}
+
+/* Feed network slot: show the real 300x250 Adsterra rectangle centered, without fake copy. */
+.network-native .network-frame-wrap{display:grid!important;grid-template-columns:1fr!important;grid-template-rows:1fr!important;min-height:268px!important;place-items:center!important;padding:9px!important}
+.network-native .network-frame-shell{grid-column:1!important;grid-row:1!important;width:100%!important;height:250px!important;display:grid!important;place-items:center!important}
+.network-native iframe{width:300px!important;height:250px!important;transform:none!important;transform-origin:center!important}
+
+/* Compact banners use their provider size, centered inside Lumi chrome. */
+.network-banner .network-frame-wrap{display:grid!important;grid-template-columns:1fr!important;min-height:78px!important;place-items:center!important;padding:8px!important}
+.network-banner .network-frame-shell{width:100%!important;min-height:60px!important;display:grid!important;place-items:center!important}
+.network-banner iframe{width:468px!important;height:60px!important;transform:none!important;transform-origin:center!important}
+
+/* Sidebar keeps the full 300x250 creative visible. */
+.network-sidebar .network-frame-wrap{display:grid!important;min-height:268px!important;place-items:center!important;padding:9px!important}
+.network-sidebar .network-frame-shell{position:relative!important;inset:auto!important;width:100%!important;height:250px!important;display:grid!important;place-items:center!important}
+.network-sidebar iframe{width:300px!important;height:250px!important;transform:none!important;transform-origin:center!important}
+
+.network-backdrop{display:grid!important;place-items:center!important;text-align:center!important}
+.network-backdrop>span{position:relative!important;left:auto!important;bottom:auto!important;z-index:2!important;padding:10px 13px!important;border:1px solid rgba(255,255,255,.12)!important;border-radius:12px!important;background:rgba(16,10,23,.62)!important;backdrop-filter:blur(10px)!important}
+.network-backdrop b{font-size:10px!important}.network-backdrop small{font-size:6.5px!important}
+
+.network-ad-lock{background:linear-gradient(90deg,rgba(15,8,20,.02),rgba(15,8,20,.10))!important;pointer-events:none!important}
+.network-provider-ready .network-ad-lock{pointer-events:none!important}
+.network-ad-foot{min-height:28px!important}
+
+@media(max-width:600px){
+  .network-native .network-frame-wrap{min-height:68px!important;padding:7px!important}
+  .network-native .network-frame-shell{height:50px!important}
+  .network-native iframe{width:320px!important;height:50px!important;max-width:100%!important;transform:none!important}
+  .network-banner .network-frame-wrap{min-height:68px!important;padding:7px!important}
+  .network-banner .network-frame-shell{height:50px!important;min-height:50px!important}
+  .network-banner iframe{width:320px!important;height:50px!important;max-width:100%!important;transform:none!important}
+  .network-sidebar .network-frame-wrap{min-height:268px!important}
+  .network-sidebar .network-frame-shell{height:250px!important}
+  .network-sidebar iframe{width:300px!important;height:250px!important;max-width:100%!important}
+  .network-ad-lock{padding:6px!important}
+}
