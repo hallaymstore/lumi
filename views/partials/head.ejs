@@ -21,16 +21,19 @@
   <% if(metaImage){ %><meta name="twitter:image" content="<%= metaImage %>"><% } %>
 
   <% if(jsonLd){ %><script type="application/ld+json"><%- JSON.stringify(jsonLd).replace(/</g,'\\u003c') %></script><% } %>
-  <link rel="manifest" href="/manifest.webmanifest?v=1.7.3">
+  <link rel="manifest" href="/manifest.webmanifest?v=1.7.4">
   <link rel="apple-touch-icon" href="/icons/icon-192.png">
   <link rel="preconnect" href="https://unpkg.com">
-  <link rel="stylesheet" href="/css/app.css?v=1.7.3">
+  <link rel="dns-prefetch" href="//www.highperformanceformat.com">
+  <link rel="dns-prefetch" href="//profitablecpmratenetwork.com">
+  <link rel="stylesheet" href="/css/app.css?v=1.7.4">
+  <link rel="stylesheet" href="/css/ads-hotfix.css?v=1.7.4">
   <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
-  <script src="/js/app.js?v=1.7.3" defer></script>
-  <script src="/js/realtime.js?v=1.7.3" defer></script>
-  <script src="/js/pwa.js?v=1.7.3" defer></script>
-  <script src="/js/v16.js?v=1.7.3" defer></script>
-  <script src="/js/ads.js?v=1.7.3" defer></script>
+  <script src="/js/app.js?v=1.7.4" defer></script>
+  <script src="/js/realtime.js?v=1.7.4" defer></script>
+  <script src="/js/pwa.js?v=1.7.4" defer></script>
+  <script src="/js/v16.js?v=1.7.4" defer></script>
+  <script src="/js/ads.js?v=1.7.4" defer></script>
 </head>
 <body class="<%= /^\/chats\/[a-f0-9]{24}$/i.test(path || '') ? 'chat-detail-body' : '' %> <%= currentUser?.dataSaver ? 'data-saver' : '' %>" data-current-user-id="<%= currentUser?._id || '' %>" data-authenticated="<%= currentUser ? '1' : '0' %>">
 <div class="app-shell">

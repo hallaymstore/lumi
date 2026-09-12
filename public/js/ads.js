@@ -73,84 +73,217 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => card.remove(), 180);
   }));
 
-  // Adsterra units stay isolated in their own frames. The countdown begins only
-  // after the provider reports a creative (or the monetized direct-link fallback).
+  /*
+   * Network advertisements are isolated in sandboxed same-site frames. We keep
+   * the provider creative hidden until the frame explicitly reports that a
+   * real creative exists; this prevents the white/empty square that was visible
+   * while ad blockers, DNS filters, or low fill-rate were resolving the unit.
+   *
+   * The card may visually disappear/reappear after a watched interval, but the
+   * provider frame is NOT reloaded and the impression is NOT counted again.
+   * This gives the requested compact rotating feel without artificial refreshes.
+   */
   const networkSlots = [...document.querySelectorAll('[data-network-ad]')];
   const networkState = new Map(networkSlots.map(slot => [slot, {
-    remaining: Math.max(1, Number(slot.dataset.networkDelay) || 3) * 1000,
-    startedAt: 0, timer: null, loadTimer: null, ready: false, loaded: false, started: false, providerReady: false, impressionSent: false
+    unlockRemaining: Math.max(1, Number(slot.dataset.networkDelay) || 3) * 1000,
+    displayRemaining: Math.max(8, Number(slot.dataset.networkVisible) || 12) * 1000,
+    cooldownMs: Math.max(15, Number(slot.dataset.networkCooldown) || 28) * 1000,
+    unlockStartedAt: 0,
+    displayStartedAt: 0,
+    unlockTimer: null,
+    displayTimer: null,
+    loadTimer: null,
+    cooldownTimer: null,
+    loaded: false,
+    providerResolved: false,
+    providerReady: false,
+    unlocked: false,
+    inView: false,
+    impressionSent: false,
+    sleeping: false
   }]));
 
-  const revealNetwork = (slot, state) => {
-    if (state.ready) return;
-    state.ready = true;
-    clearInterval(state.timer); state.timer = null;
-    clearTimeout(state.loadTimer); state.loadTimer = null;
-    slot.querySelector('[data-network-lock]')?.setAttribute('hidden', '');
+  const actualFormat = slot => innerWidth <= 640
+    ? (slot.dataset.networkMobileFormat || slot.dataset.networkFormat || 'mobile')
+    : (slot.dataset.networkDesktopFormat || slot.dataset.networkFormat || 'desktop');
+
+  const status = (slot, text, mode = 'loading') => {
+    const label = slot.querySelector('[data-network-status]');
+    if (label) label.textContent = text;
+    slot.dataset.networkStatus = mode;
+    const chip = slot.querySelector('[data-network-live-chip]');
+    if (chip) chip.dataset.state = mode;
+  };
+
+  const updateUnlockCount = (slot, state) => {
+    const node = slot.querySelector('[data-network-countdown]');
+    if (node) node.textContent = Math.max(0, Math.ceil(state.unlockRemaining / 1000));
+  };
+
+  const updateDisplayCount = (slot, state) => {
+    const node = slot.querySelector('[data-network-visible-countdown]');
+    if (node) node.textContent = Math.max(0, Math.ceil(state.displayRemaining / 1000));
+  };
+
+  const sendNetworkImpression = (slot, state) => {
+    if (state.impressionSent) return;
+    state.impressionSent = true;
+    fetch('/api/ads/network/impression', {
+      method: 'POST', keepalive: true,
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({
+        placement: slot.dataset.networkPlacement,
+        format: actualFormat(slot),
+        providerState: state.providerReady ? 'provider' : 'fallback'
+      })
+    }).catch(() => {});
+  };
+
+  const pauseUnlock = (slot, state) => {
+    if (!state.unlockStartedAt || state.unlocked) return;
+    state.unlockRemaining = Math.max(0, state.unlockRemaining - (performance.now() - state.unlockStartedAt));
+    state.unlockStartedAt = 0;
+    clearInterval(state.unlockTimer); state.unlockTimer = null;
+    updateUnlockCount(slot, state);
+  };
+
+  const pauseDisplay = (slot, state) => {
+    if (!state.displayStartedAt || state.sleeping) return;
+    state.displayRemaining = Math.max(0, state.displayRemaining - (performance.now() - state.displayStartedAt));
+    state.displayStartedAt = 0;
+    clearInterval(state.displayTimer); state.displayTimer = null;
+    updateDisplayCount(slot, state);
+  };
+
+  const wakeNetwork = (slot, state) => {
+    state.sleeping = false;
+    state.displayRemaining = Math.max(8, Number(slot.dataset.networkVisible) || 12) * 1000;
+    slot.classList.remove('network-sleeping');
+    slot.classList.add('network-reappearing');
+    setTimeout(() => slot.classList.remove('network-reappearing'), 420);
+    const watch = slot.querySelector('[data-network-watch]');
+    if (watch) watch.hidden = false;
+    updateDisplayCount(slot, state);
+    status(slot, state.providerReady ? 'Adsterra live' : 'Zaxira taklif', state.providerReady ? 'live' : 'fallback');
+    if (state.inView) startDisplay(slot, state);
+  };
+
+  const sleepNetwork = (slot, state) => {
+    if (state.sleeping) return;
+    state.sleeping = true;
+    state.displayStartedAt = 0;
+    clearInterval(state.displayTimer); state.displayTimer = null;
+    const watch = slot.querySelector('[data-network-watch]');
+    if (watch) watch.hidden = true;
+    slot.classList.add('network-sleeping');
+    status(slot, `Yana ${Math.ceil(state.cooldownMs / 1000)}s dan keyin`, 'sleeping');
+    clearTimeout(state.cooldownTimer);
+    state.cooldownTimer = setTimeout(() => wakeNetwork(slot, state), state.cooldownMs);
+  };
+
+  function startDisplay(slot, state) {
+    if (!state.unlocked || state.sleeping || !state.inView || state.displayStartedAt) return;
+    state.displayStartedAt = performance.now();
+    state.displayTimer = setInterval(() => {
+      const left = state.displayRemaining - (performance.now() - state.displayStartedAt);
+      const node = slot.querySelector('[data-network-visible-countdown]');
+      if (node) node.textContent = Math.max(0, Math.ceil(left / 1000));
+      if (left <= 0) {
+        state.displayRemaining = 0;
+        sleepNetwork(slot, state);
+      }
+    }, 200);
+  }
+
+  const unlockNetwork = (slot, state) => {
+    if (state.unlocked) return;
+    state.unlocked = true;
+    state.unlockRemaining = 0;
+    state.unlockStartedAt = 0;
+    clearInterval(state.unlockTimer); state.unlockTimer = null;
+    const lock = slot.querySelector('[data-network-lock]');
+    if (lock) lock.hidden = true;
     slot.querySelectorAll('[data-network-cta]').forEach(link => { link.hidden = false; });
+    const watch = slot.querySelector('[data-network-watch]');
+    if (watch) watch.hidden = false;
     slot.classList.add('network-ready');
-    if (!state.impressionSent) {
-      state.impressionSent = true;
-      fetch('/api/ads/network/impression', {
-        method: 'POST', keepalive: true,
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({
-          placement: slot.dataset.networkPlacement,
-          format: slot.dataset.networkFormat,
-          providerState: state.providerReady ? 'provider' : 'fallback'
-        })
-      }).catch(() => {});
-    }
+    sendNetworkImpression(slot, state);
+    updateDisplayCount(slot, state);
+    if (state.inView) startDisplay(slot, state);
     window.lucide?.createIcons();
   };
 
-  const beginNetworkCountdown = (slot, providerReady = false) => {
+  const startUnlock = (slot, state) => {
+    if (!state.providerResolved || state.unlocked || !state.inView || state.unlockStartedAt) return;
+    const label = slot.querySelector('[data-network-lock-label]');
+    if (label) label.textContent = state.providerReady ? 'Reklamani ko‘ring' : 'Zaxira taklif tayyor';
+    const timerRow = slot.querySelector('[data-network-timer]');
+    if (timerRow) timerRow.hidden = false;
+    state.unlockStartedAt = performance.now();
+    state.unlockTimer = setInterval(() => {
+      const left = state.unlockRemaining - (performance.now() - state.unlockStartedAt);
+      const count = slot.querySelector('[data-network-countdown]');
+      if (count) count.textContent = Math.max(0, Math.ceil(left / 1000));
+      if (left <= 0) unlockNetwork(slot, state);
+    }, 150);
+  };
+
+  const resolveProvider = (slot, providerReady) => {
     const state = networkState.get(slot);
-    if (!state || state.started || state.ready) return;
-    state.started = true;
-    state.providerReady = providerReady;
+    if (!state || state.providerResolved) return;
+    state.providerResolved = true;
+    state.providerReady = !!providerReady;
     clearTimeout(state.loadTimer); state.loadTimer = null;
     slot.classList.remove('network-loading');
     slot.classList.add(providerReady ? 'network-provider-ready' : 'network-provider-fallback');
-    const label = slot.querySelector('[data-network-lock-label]');
-    if (label) label.textContent = providerReady ? 'Reklamani ko‘ring' : 'Hamkor taklifi tayyor';
-    const timerRow = slot.querySelector('[data-network-timer]');
-    if (timerRow) timerRow.hidden = false;
-    state.startedAt = performance.now();
-    state.timer = setInterval(() => {
-      const left = state.remaining - (performance.now() - state.startedAt);
-      const count = slot.querySelector('[data-network-countdown]');
-      if (count) count.textContent = Math.max(0, Math.ceil(left / 1000));
-      if (left <= 0) revealNetwork(slot, state);
-    }, 150);
+    status(slot, providerReady ? 'Adsterra live' : 'Zaxira taklif', providerReady ? 'live' : 'fallback');
+    const footnote = slot.querySelector('[data-network-footnote]');
+    if (footnote) footnote.textContent = providerReady
+      ? 'Haqiqiy creative hamkor tarmoqdan yuklandi'
+      : 'Provider bloklangan yoki creative topilmadi — bo‘sh joy o‘rniga zaxira CTA';
+    if (state.inView) startUnlock(slot, state);
   };
 
   const loadNetwork = slot => {
     const state = networkState.get(slot);
     if (!state || state.loaded) return;
     const frame = slot.querySelector('[data-network-frame]');
-    if (frame) {
-      slot.classList.add('network-loading');
-      frame.addEventListener('load', () => {
-        slot.classList.add('network-frame-loaded');
-      }, { once: true });
-      frame.src = innerWidth <= 640 ? frame.dataset.mobile : frame.dataset.desktop;
-      state.loaded = true;
-      state.loadTimer = setTimeout(() => beginNetworkCountdown(slot, false), 8000);
-    }
+    if (!frame) return;
+    state.loaded = true;
+    slot.classList.add('network-loading');
+    status(slot, 'Yuklanmoqda', 'loading');
+    const base = innerWidth <= 640 ? frame.dataset.mobile : frame.dataset.desktop;
+    const joiner = base.includes('?') ? '&' : '?';
+    frame.src = `${base}${joiner}slot=${encodeURIComponent(slot.dataset.networkPlacement || 'feed')}&ts=${Date.now()}`;
+    state.loadTimer = setTimeout(() => resolveProvider(slot, false), 7200);
   };
 
   addEventListener('message', event => {
     if (event.data?.type !== 'lumi-adsterra') return;
     const slot = networkSlots.find(item => item.querySelector('[data-network-frame]')?.contentWindow === event.source);
     if (!slot) return;
-    beginNetworkCountdown(slot, event.data.state === 'ready');
+    if (event.data.state === 'ready') resolveProvider(slot, true);
+    else if (event.data.state === 'empty' || event.data.state === 'error') resolveProvider(slot, false);
   });
+
+  const setInView = (slot, inView) => {
+    const state = networkState.get(slot);
+    if (!state) return;
+    state.inView = inView;
+    if (inView) {
+      loadNetwork(slot);
+      if (state.providerResolved && !state.unlocked) startUnlock(slot, state);
+      if (state.unlocked && !state.sleeping) startDisplay(slot, state);
+    } else {
+      pauseUnlock(slot, state);
+      pauseDisplay(slot, state);
+    }
+  };
 
   if ('IntersectionObserver' in window && networkSlots.length) {
     const networkObserver = new IntersectionObserver(entries => entries.forEach(entry => {
-      if (entry.isIntersecting && entry.intersectionRatio >= .35) loadNetwork(entry.target);
-    }), { threshold: [0, .35, 1] });
+      setInView(entry.target, entry.isIntersecting && entry.intersectionRatio >= .35);
+    }), { threshold: [0, .35, .6, 1] });
     networkSlots.forEach(slot => networkObserver.observe(slot));
-  } else networkSlots.forEach(loadNetwork);
+  } else networkSlots.forEach(slot => setInView(slot, true));
 });
