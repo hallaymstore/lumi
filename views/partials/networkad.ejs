@@ -1,7 +1,7 @@
 <%
 const isNative=variant==='native';
 const isSidebar=variant==='sidebar';
-const desktopFormat=isNative?'native':isSidebar?'rectangle':'desktop';
+const desktopFormat=isNative?'rectangle':isSidebar?'rectangle':'desktop';
 const mobileFormat=isNative?'mobile':isSidebar?'rectangle':'mobile';
 const unlockSeconds=Math.max(1,Math.min(10,Number(adConfig?.ctaDelaySeconds||3)));
 const visibleSeconds=Math.max(8,Math.min(30,Number(adConfig?.networkVisibleSeconds||12)));
@@ -10,7 +10,7 @@ const cooldownSeconds=Math.max(15,Math.min(120,Number(adConfig?.networkCooldownS
 <article class="network-ad-card network-<%=variant%>" data-network-ad data-network-placement="<%=placement%>" data-network-format="<%=desktopFormat%>" data-network-mobile-format="<%=mobileFormat%>" data-network-desktop-format="<%=desktopFormat%>" data-network-delay="<%=unlockSeconds%>" data-network-visible="<%=visibleSeconds%>" data-network-cooldown="<%=cooldownSeconds%>">
   <header class="network-ad-head">
     <span class="network-brandmark"><i data-lucide="sparkles"></i></span>
-    <span class="network-ad-identity"><strong>Hamkor reklama</strong><small>Adsterra tarmog‘i</small></span>
+    <span class="network-ad-identity"><strong>Homiylik reklama</strong><small>Adsterra network</small></span>
     <span class="network-live-chip" data-network-live-chip><i data-lucide="loader-circle"></i><b data-network-status>Yuklanmoqda</b></span>
     <span class="network-sponsored"><i data-lucide="badge-info"></i> <%=adConfig?.label||'Reklama'%></span>
   </header>
@@ -18,41 +18,15 @@ const cooldownSeconds=Math.max(15,Math.min(120,Number(adConfig?.networkCooldownS
   <div class="network-frame-wrap" data-network-frame-wrap>
     <div class="network-backdrop" aria-hidden="true">
       <i></i><i></i>
-      <span><b>Hamkorlardan maxsus taklif</b><small>Haqiqiy reklama creative tekshirilmoqda</small></span>
+      <span><b>Reklama yuklanmoqda</b><small>Haqiqiy Adsterra creative tekshirilmoqda</small></span>
     </div>
-
-    <%if(isNative){%>
-      <div class="network-native-copy">
-        <span>TAVSIYA ETILGAN</span>
-        <h3>Yangi mahsulot va xizmatlarni kashf eting</h3>
-        <p>Reklama kontenti hamkor tarmoq tomonidan avtomatik tanlanadi. Lumi bo‘sh oq blok ko‘rsatmaydi.</p>
-        <a href="/ads/network/direct?placement=<%=placement%>&format=direct" data-network-cta hidden target="_blank" rel="nofollow sponsored noopener noreferrer">Batafsil <i data-lucide="arrow-up-right"></i></a>
-      </div>
-    <%}%>
-
-    <%if(variant==='banner'){%>
-      <div class="network-banner-copy">
-        <span>DISCOVER</span>
-        <h3>Yangi imkoniyatlarni toping</h3>
-        <p>Hamkor tavsiyasi</p>
-        <a href="/ads/network/direct?placement=<%=placement%>&format=direct" data-network-cta hidden target="_blank" rel="nofollow sponsored noopener noreferrer">Batafsil <i data-lucide="arrow-up-right"></i></a>
-      </div>
-    <%}%>
-
-    <%if(isSidebar){%>
-      <div class="network-sidebar-copy">
-        <span>SPONSORED</span>
-        <h3>Bugungi hamkor taklifi</h3>
-        <a href="/ads/network/direct?placement=<%=placement%>&format=direct" data-network-cta hidden target="_blank" rel="nofollow sponsored noopener noreferrer">Ko‘rish <i data-lucide="arrow-up-right"></i></a>
-      </div>
-    <%}%>
 
     <div class="network-frame-shell" data-network-frame-shell>
       <iframe
         data-network-frame
-        data-mobile="/ads/network/<%=mobileFormat%>?v=1.7.4"
-        data-desktop="/ads/network/<%=desktopFormat%>?v=1.7.4"
-        title="Adsterra hamkor reklamasi"
+        data-mobile="/ads/network/<%=mobileFormat%>?v=1.7.6"
+        data-desktop="/ads/network/<%=desktopFormat%>?v=1.7.6"
+        title="Adsterra reklama"
         loading="lazy"
         scrolling="no"
         referrerpolicy="no-referrer-when-downgrade"
@@ -68,7 +42,7 @@ const cooldownSeconds=Math.max(15,Math.min(120,Number(adConfig?.networkCooldownS
   </div>
 
   <footer class="network-ad-foot">
-    <span><i data-lucide="shield-check"></i> Hamkor kontent</span>
-    <small data-network-footnote>Creative mavjud bo‘lmasa Lumi zaxira tavsiyasini ko‘rsatadi</small>
+    <span><i data-lucide="shield-check"></i> Adsterra creative</span>
+    <small data-network-footnote>Provider reklama berganida shu yerda asl banner ko‘rinadi</small>
   </footer>
 </article>
