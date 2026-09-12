@@ -1,0 +1,35 @@
+/* Lumi campaign creative v2 — always show the ad itself, not only its link. */
+.ad-card.ad-native,.ad-card.ad-compact{position:relative!important;overflow:hidden!important;background:var(--surface)!important}
+.ad-card .ad-content{display:grid!important;grid-template-columns:minmax(0,46%) minmax(0,54%)!important;min-height:230px!important;background:var(--surface)!important}
+.ad-card .ad-image-wrap{position:relative!important;display:block!important;min-width:0!important;min-height:230px!important;height:100%!important;overflow:hidden!important;background:linear-gradient(145deg,#4f1c45 0%,#7c2f6d 38%,#44307a 68%,#17365f 100%)!important;isolation:isolate!important}
+.ad-card .ad-image-wrap::before{content:"";position:absolute;z-index:0;inset:-20%;background:radial-gradient(circle at 25% 25%,rgba(255,117,173,.62),transparent 31%),radial-gradient(circle at 82% 78%,rgba(89,144,255,.48),transparent 34%);filter:blur(10px)}
+.ad-card .ad-image-fallback{position:absolute;z-index:1;inset:0;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;padding:18px;color:#fff;background:linear-gradient(180deg,transparent 18%,rgba(10,7,14,.72) 100%)}
+.ad-card .ad-image-fallback>b{width:46px;height:46px;border-radius:15px;display:grid;place-items:center;margin-bottom:auto;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(10px);font-size:20px;box-shadow:0 12px 30px rgba(0,0,0,.18)}
+.ad-card .ad-image-fallback strong{font-size:16px;line-height:1.13;letter-spacing:-.35px;max-width:92%}.ad-card .ad-image-fallback small{font-size:8px;margin-top:5px;opacity:.74}
+.ad-card .ad-image{position:absolute!important;z-index:2!important;inset:0!important;width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;object-fit:cover!important;object-position:center!important;display:block!important;background:transparent!important;color:transparent!important;font-size:0!important}
+.ad-card .ad-image-wrap::after{content:"";position:absolute;z-index:3;inset:0;background:linear-gradient(180deg,rgba(10,7,14,.02) 45%,rgba(10,7,14,.42) 100%);pointer-events:none}
+.ad-card .ad-visual-badge{position:absolute;z-index:4;left:10px;top:10px;display:inline-flex;align-items:center;gap:4px;padding:5px 7px;border-radius:999px;background:rgba(15,9,21,.72);border:1px solid rgba(255,255,255,.16);color:#fff;font-size:6.5px;font-weight:900;backdrop-filter:blur(10px)}
+.ad-card .ad-visual-badge svg{width:10px;height:10px;color:#ff9fc3}
+.ad-card .ad-copy{position:relative!important;z-index:2!important;padding:20px 19px!important;display:flex!important;flex-direction:column!important;justify-content:center!important;min-width:0!important;background:linear-gradient(145deg,color-mix(in srgb,var(--surface) 96%,transparent),color-mix(in srgb,var(--surface2) 92%,transparent))!important}
+.ad-card .ad-copy::before{content:"TAVSIYA ETILGAN";font-size:6.5px;font-weight:950;letter-spacing:1.35px;color:var(--primary);margin-bottom:7px}
+.ad-card .ad-copy h3{font-size:20px!important;line-height:1.12!important;letter-spacing:-.6px!important;margin:0 0 8px!important;overflow-wrap:anywhere}
+.ad-card .ad-copy p{display:block!important;font-size:10px!important;line-height:1.55!important;margin:0 0 15px!important;color:var(--muted)!important;-webkit-line-clamp:unset!important;overflow:visible!important}
+.ad-card .ad-cta-row{display:flex!important;align-items:center!important;gap:8px!important;flex-wrap:wrap!important;margin-top:auto!important}.ad-card .ad-domain{max-width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;font-size:7px!important}
+.ad-card .ad-wait,.ad-card .ad-cta{margin-left:auto!important;min-height:36px!important;padding:9px 12px!important;font-size:8px!important;border-radius:11px!important}.ad-card .ad-cta{box-shadow:0 10px 25px rgba(215,69,160,.24)!important}
+
+.ad-card.ad-compact .ad-content{grid-template-columns:170px minmax(0,1fr)!important;min-height:145px!important}.ad-card.ad-compact .ad-image-wrap{min-height:145px!important}.ad-card.ad-compact .ad-copy{padding:14px!important}.ad-card.ad-compact .ad-copy h3{font-size:15px!important}.ad-card.ad-compact .ad-copy p{font-size:8px!important;display:-webkit-box!important;-webkit-line-clamp:2!important;-webkit-box-orient:vertical!important;overflow:hidden!important}.ad-card.ad-compact .ad-image-fallback{padding:11px}.ad-card.ad-compact .ad-image-fallback>b{width:34px;height:34px;border-radius:11px;font-size:14px}.ad-card.ad-compact .ad-image-fallback strong{font-size:11px}.ad-card.ad-compact .ad-image-fallback small{font-size:6px}
+
+html[data-theme=dark] .ad-card .ad-copy{background:linear-gradient(145deg,rgba(25,19,28,.98),rgba(34,25,37,.96))!important}
+
+@media(max-width:600px){
+  .ad-card .ad-content{grid-template-columns:1fr!important;grid-template-rows:auto auto!important;min-height:0!important}
+  .ad-card .ad-image-wrap{min-height:0!important;height:auto!important;aspect-ratio:16/10!important}
+  .ad-card .ad-copy{padding:13px 12px 14px!important}
+  .ad-card .ad-copy::before{font-size:5.8px!important;margin-bottom:5px!important}
+  .ad-card .ad-copy h3{font-size:14px!important;margin-bottom:6px!important}
+  .ad-card .ad-copy p{font-size:8px!important;line-height:1.48!important;margin-bottom:10px!important;display:-webkit-box!important;-webkit-line-clamp:3!important;-webkit-box-orient:vertical!important;overflow:hidden!important}
+  .ad-card .ad-image-fallback{padding:12px}.ad-card .ad-image-fallback>b{width:38px;height:38px;border-radius:12px;font-size:16px}.ad-card .ad-image-fallback strong{font-size:13px}.ad-card .ad-image-fallback small{font-size:6.5px}
+  .ad-card .ad-visual-badge{left:8px;top:8px;padding:4px 6px;font-size:5.8px}
+  .ad-card .ad-wait,.ad-card .ad-cta{min-height:32px!important;padding:7px 9px!important;font-size:7px!important}
+  .ad-card.ad-compact .ad-content{grid-template-columns:112px minmax(0,1fr)!important;grid-template-rows:1fr!important;min-height:112px!important}.ad-card.ad-compact .ad-image-wrap{height:112px!important;aspect-ratio:auto!important;min-height:112px!important}.ad-card.ad-compact .ad-copy{padding:9px!important}.ad-card.ad-compact .ad-copy h3{font-size:11px!important}.ad-card.ad-compact .ad-copy p{display:none!important}.ad-card.ad-compact .ad-domain{display:none!important}
+}
