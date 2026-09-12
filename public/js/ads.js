@@ -73,16 +73,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => card.remove(), 180);
   }));
 
-  /*
-   * Network advertisements are isolated in sandboxed same-site frames. We keep
-   * the provider creative hidden until the frame explicitly reports that a
-   * real creative exists; this prevents the white/empty square that was visible
-   * while ad blockers, DNS filters, or low fill-rate were resolving the unit.
-   *
-   * The card may visually disappear/reappear after a watched interval, but the
-   * provider frame is NOT reloaded and the impression is NOT counted again.
-   * This gives the requested compact rotating feel without artificial refreshes.
-   */
   const networkSlots = [...document.querySelectorAll('[data-network-ad]')];
   const networkState = new Map(networkSlots.map(slot => [slot, {
     unlockRemaining: Math.max(1, Number(slot.dataset.networkDelay) || 3) * 1000,
@@ -100,6 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
     unlocked: false,
     inView: false,
     impressionSent: false,
+    fallbackLogged: false,
     sleeping: false
   }]));
 
@@ -115,6 +106,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (chip) chip.dataset.state = mode;
   };
 
+  const logNetwork = (slot, providerState) => fetch('/api/ads/network/impression', {
+    method: 'POST', keepalive: true,
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({
+      placement: slot.dataset.networkPlacement,
+      format: actualFormat(slot),
+      providerState
+    })
+  }).catch(() => {});
+
   const updateUnlockCount = (slot, state) => {
     const node = slot.querySelector('[data-network-countdown]');
     if (node) node.textContent = Math.max(0, Math.ceil(state.unlockRemaining / 1000));
@@ -123,20 +124,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const updateDisplayCount = (slot, state) => {
     const node = slot.querySelector('[data-network-visible-countdown]');
     if (node) node.textContent = Math.max(0, Math.ceil(state.displayRemaining / 1000));
-  };
-
-  const sendNetworkImpression = (slot, state) => {
-    if (state.impressionSent) return;
-    state.impressionSent = true;
-    fetch('/api/ads/network/impression', {
-      method: 'POST', keepalive: true,
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({
-        placement: slot.dataset.networkPlacement,
-        format: actualFormat(slot),
-        providerState: state.providerReady ? 'provider' : 'fallback'
-      })
-    }).catch(() => {});
   };
 
   const pauseUnlock = (slot, state) => {
@@ -156,6 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const wakeNetwork = (slot, state) => {
+    if (!state.providerReady) return;
     state.sleeping = false;
     state.displayRemaining = Math.max(8, Number(slot.dataset.networkVisible) || 12) * 1000;
     slot.classList.remove('network-sleeping');
@@ -164,25 +152,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const watch = slot.querySelector('[data-network-watch]');
     if (watch) watch.hidden = false;
     updateDisplayCount(slot, state);
-    status(slot, state.providerReady ? 'Adsterra live' : 'Zaxira taklif', state.providerReady ? 'live' : 'fallback');
+    status(slot, 'Adsterra live', 'live');
     if (state.inView) startDisplay(slot, state);
   };
 
   const sleepNetwork = (slot, state) => {
-    if (state.sleeping) return;
+    if (state.sleeping || !state.providerReady) return;
     state.sleeping = true;
     state.displayStartedAt = 0;
     clearInterval(state.displayTimer); state.displayTimer = null;
     const watch = slot.querySelector('[data-network-watch]');
     if (watch) watch.hidden = true;
     slot.classList.add('network-sleeping');
-    status(slot, `Yana ${Math.ceil(state.cooldownMs / 1000)}s dan keyin`, 'sleeping');
+    status(slot, `Yana ${Math.ceil(state.cooldownMs / 1000)}s`, 'sleeping');
     clearTimeout(state.cooldownTimer);
     state.cooldownTimer = setTimeout(() => wakeNetwork(slot, state), state.cooldownMs);
   };
 
   function startDisplay(slot, state) {
-    if (!state.unlocked || state.sleeping || !state.inView || state.displayStartedAt) return;
+    if (!state.unlocked || !state.providerReady || state.sleeping || !state.inView || state.displayStartedAt) return;
     state.displayStartedAt = performance.now();
     state.displayTimer = setInterval(() => {
       const left = state.displayRemaining - (performance.now() - state.displayStartedAt);
@@ -196,27 +184,29 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   const unlockNetwork = (slot, state) => {
-    if (state.unlocked) return;
+    if (state.unlocked || !state.providerReady) return;
     state.unlocked = true;
     state.unlockRemaining = 0;
     state.unlockStartedAt = 0;
     clearInterval(state.unlockTimer); state.unlockTimer = null;
     const lock = slot.querySelector('[data-network-lock]');
     if (lock) lock.hidden = true;
-    slot.querySelectorAll('[data-network-cta]').forEach(link => { link.hidden = false; });
     const watch = slot.querySelector('[data-network-watch]');
     if (watch) watch.hidden = false;
     slot.classList.add('network-ready');
-    sendNetworkImpression(slot, state);
+    if (!state.impressionSent) {
+      state.impressionSent = true;
+      logNetwork(slot, 'provider');
+    }
     updateDisplayCount(slot, state);
     if (state.inView) startDisplay(slot, state);
     window.lucide?.createIcons();
   };
 
   const startUnlock = (slot, state) => {
-    if (!state.providerResolved || state.unlocked || !state.inView || state.unlockStartedAt) return;
+    if (!state.providerReady || state.unlocked || !state.inView || state.unlockStartedAt) return;
     const label = slot.querySelector('[data-network-lock-label]');
-    if (label) label.textContent = state.providerReady ? 'Reklamani ko‘ring' : 'Zaxira taklif tayyor';
+    if (label) label.textContent = 'Haqiqiy reklama tayyor';
     const timerRow = slot.querySelector('[data-network-timer]');
     if (timerRow) timerRow.hidden = false;
     state.unlockStartedAt = performance.now();
@@ -228,19 +218,34 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 150);
   };
 
+  const noFill = (slot, state) => {
+    if (!state.fallbackLogged) {
+      state.fallbackLogged = true;
+      logNetwork(slot, 'fallback');
+    }
+    state.providerResolved = true;
+    state.providerReady = false;
+    clearTimeout(state.loadTimer); state.loadTimer = null;
+    clearInterval(state.unlockTimer); state.unlockTimer = null;
+    slot.classList.remove('network-loading', 'network-provider-ready');
+    slot.classList.add('network-no-fill');
+    status(slot, 'Reklama topilmadi', 'fallback');
+    // Do not show a fake Lumi creative as if it were an Adsterra advertisement.
+    // A no-fill/ad-block result simply collapses the network slot.
+  };
+
   const resolveProvider = (slot, providerReady) => {
     const state = networkState.get(slot);
     if (!state || state.providerResolved) return;
+    if (!providerReady) return noFill(slot, state);
     state.providerResolved = true;
-    state.providerReady = !!providerReady;
+    state.providerReady = true;
     clearTimeout(state.loadTimer); state.loadTimer = null;
-    slot.classList.remove('network-loading');
-    slot.classList.add(providerReady ? 'network-provider-ready' : 'network-provider-fallback');
-    status(slot, providerReady ? 'Adsterra live' : 'Zaxira taklif', providerReady ? 'live' : 'fallback');
+    slot.classList.remove('network-loading', 'network-no-fill');
+    slot.classList.add('network-provider-ready');
+    status(slot, 'Adsterra live', 'live');
     const footnote = slot.querySelector('[data-network-footnote]');
-    if (footnote) footnote.textContent = providerReady
-      ? 'Haqiqiy creative hamkor tarmoqdan yuklandi'
-      : 'Provider bloklangan yoki creative topilmadi — bo‘sh joy o‘rniga zaxira CTA';
+    if (footnote) footnote.textContent = 'Haqiqiy creative Adsterra tarmog‘idan yuklandi';
     if (state.inView) startUnlock(slot, state);
   };
 
@@ -255,7 +260,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const base = innerWidth <= 640 ? frame.dataset.mobile : frame.dataset.desktop;
     const joiner = base.includes('?') ? '&' : '?';
     frame.src = `${base}${joiner}slot=${encodeURIComponent(slot.dataset.networkPlacement || 'feed')}&ts=${Date.now()}`;
-    state.loadTimer = setTimeout(() => resolveProvider(slot, false), 7200);
+    state.loadTimer = setTimeout(() => noFill(slot, state), 9000);
   };
 
   addEventListener('message', event => {
@@ -272,7 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
     state.inView = inView;
     if (inView) {
       loadNetwork(slot);
-      if (state.providerResolved && !state.unlocked) startUnlock(slot, state);
+      if (state.providerReady && !state.unlocked) startUnlock(slot, state);
       if (state.unlocked && !state.sleeping) startDisplay(slot, state);
     } else {
       pauseUnlock(slot, state);
