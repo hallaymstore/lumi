@@ -4,7 +4,7 @@
     <div class="story-wrap">
       <a class="story <%= person.hasStory ? 'has-story' : 'no-story' %>" href="<%= href %>" <%= currentUser ? '' : 'data-auth-required' %>>
         <span>
-          <% if(person.avatarUrl){ %><img src="<%= person.avatarUrl %>" alt=""><% } else { %><b><%= person.name[0].toUpperCase() %></b><% } %>
+          <img src="<%=person.avatarUrl||'/icons/icon-192.png'%>" class="<%=person.avatarUrl?'':'avatar-fallback'%>" alt="<%=person.name||person.username%>">
           <% if(isMe){ %><em class="story-plus"><i data-lucide="plus"></i></em><% } %>
         </span>
         <small><%= isMe ? 'Storyingiz' : person.username %></small>
