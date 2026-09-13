@@ -1,0 +1,16 @@
+<%- include('../partials/head') %><%- include('../partials/topbar') %>
+<main class="content narrow"><form class="card create-card" method="post" action="/posts/<%=post._id%>/edit" enctype="multipart/form-data">
+  <div class="collection-head"><div><h1>Postni tahrirlash</h1><p class="muted tiny"><%=post.status==='draft'?'Qoralama':post.status==='archived'?'Arxivlangan':'Joylangan post'%></p></div><a class="btn ghost" href="<%=post.status==='draft'?'/posts/drafts':post.status==='archived'?'/posts/archived':'/p/'+post._id%>">Ortga</a></div>
+  <%if(error){%><div class="alert"><%=error%></div><%}%>
+  <% const media=(post.media&&post.media.length?post.media:(post.imageUrl?[{url:post.imageUrl,type:'image'}]:[])); %>
+  <%if(media.length){%><div class="edit-media-preview"><%media.forEach(m=>{%><%if(m.type==='video'){%><video src="<%=m.url%>" muted preload="metadata"></video><%}else{%><img src="<%=m.thumbUrl||m.url%>" alt=""><%}%><%})%></div><%}%>
+  <label class="file-btn"><input type="file" name="images" accept="image/jpeg,image/png,image/webp,image/avif,video/mp4,video/webm" multiple data-multi-image-input><i data-lucide="images"></i> Medianing barchasini almashtirish</label>
+  <small class="muted">Yangi media tanlasangiz eski media to‘plami to‘liq almashtiriladi.</small>
+  <label class="mention-field">Caption<textarea name="caption" maxlength="2200" rows="5" data-mention-input><%=post.caption||''%></textarea><div class="mention-suggestions" data-mention-suggestions hidden></div></label>
+  <label>Taglar<input name="tags" value="<%=(post.tags||[]).map(t=>'#'+t).join(' ')%>" placeholder="#beauty #style"></label>
+  <div class="profile-library"><button class="btn primary" name="intent" value="save">Saqlash</button><%if(post.status!=='published'){%><button class="btn primary" name="intent" value="publish">Joylash</button><%}%><%if(post.status==='published'){%><button class="btn ghost" name="intent" value="draft">Qoralamaga qaytarish</button><%}%></div>
+</form>
+<%if(post.status==='published'){%><form class="card" method="post" action="/posts/<%=post._id%>/archive"><button class="btn ghost full"><i data-lucide="archive"></i> Arxivlash</button></form><%}%>
+<%if(post.status==='archived'){%><form class="card" method="post" action="/posts/<%=post._id%>/unarchive"><button class="btn primary full"><i data-lucide="archive-restore"></i> Profilga qaytarish</button></form><%}%>
+<form class="card" method="post" action="/posts/<%=post._id%>/delete"><button class="btn danger full"><i data-lucide="trash-2"></i> Postni o‘chirish</button></form>
+</main><%- include('../partials/footer') %>
