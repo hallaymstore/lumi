@@ -11,6 +11,7 @@ function nextSafe(v){return v&&String(v).startsWith('/')?String(v):'/feed'}
 
 router.get('/privacy',(req,res)=>res.render('legal/privacy',{title:'Privacy Policy',metaTitle:'Lumi Privacy Policy',metaDescription:'Lumi maxfiylik siyosati va foydalanuvchi ma’lumotlarini boshqarish qoidalari.'}));
 router.get('/terms',(req,res)=>res.render('legal/terms',{title:'Foydalanish shartlari',termsVersion:TERMS_VERSION,metaTitle:'Lumi Terms of Use',metaDescription:'Lumi foydalanish shartlari va hamjamiyat qoidalari.'}));
+router.get('/child-safety',(req,res)=>res.render('legal/child-safety',{title:'Child Safety Standards',metaTitle:'Lumi Child Safety Standards',metaDescription:'Lumi standards against child sexual abuse and exploitation (CSAE) and child sexual abuse material (CSAM).'}));
 router.get('/terms/accept',requireAuth,(req,res)=>res.render('legal/terms-accept',{title:'Shartlarni qabul qilish',termsVersion:TERMS_VERSION,next:nextSafe(req.query.next),error:null}));
 router.post('/terms/accept',requireAuth,async(req,res)=>{
   const next=nextSafe(req.body.next);
