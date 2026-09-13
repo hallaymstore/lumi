@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#ff4f8b">
-  <meta name="robots" content="<%= /^\/(chats|settings|admin|notifications|saved|login|register|terms\/accept)/.test(path || '') ? 'noindex,nofollow' : 'index,follow,max-image-preview:large' %>">
+  <meta name="robots" content="<%= /^\/(chats|settings|admin|notifications|saved|posts\/(drafts|archived)|login|register|terms\/accept)/.test(path || '') ? 'noindex,nofollow' : 'index,follow,max-image-preview:large' %>">
   <title><%= metaTitle || (title + ' · Lumi') %></title>
   <meta name="description" content="<%= metaDescription || 'Lumi — kreativ vizual postlar, creatorlar va premium mobile-first social platforma.' %>">
   <link rel="canonical" href="<%= canonicalUrl %>">
@@ -12,9 +12,9 @@
   <% if(metaImage){ %><meta property="og:image" content="<%= metaImage %>"><meta property="og:image:alt" content="<%= metaTitle || title %>"><% } %>
   <meta name="twitter:card" content="<%= metaImage ? 'summary_large_image' : 'summary' %>"><meta name="twitter:title" content="<%= metaTitle || (title + ' · Lumi') %>"><meta name="twitter:description" content="<%= metaDescription || 'Lumi social platforma' %>"><% if(metaImage){ %><meta name="twitter:image" content="<%= metaImage %>"><% } %>
   <% if(jsonLd){ %><script type="application/ld+json"><%- JSON.stringify(jsonLd).replace(/</g,'\\u003c') %></script><% } %>
-  <link rel="manifest" href="/manifest.webmanifest?v=1.9.0"><link rel="apple-touch-icon" href="/icons/icon-192.png"><link rel="preconnect" href="https://unpkg.com">
+  <link rel="manifest" href="/manifest.webmanifest?v=1.10.0"><link rel="apple-touch-icon" href="/icons/icon-192.png"><link rel="preconnect" href="https://unpkg.com">
   <% if(!isAndroidApp){ %><link rel="dns-prefetch" href="//www.highperformanceformat.com"><link rel="dns-prefetch" href="//profitablecpmratenetwork.com"><% } %>
-  <link rel="stylesheet" href="/css/app.css?v=1.9.0"><link rel="stylesheet" href="/css/ads-hotfix.css?v=1.9.0"><link rel="stylesheet" href="/css/ad-creative-v2.css?v=1.9.0"><link rel="stylesheet" href="/css/ads-live-network.css?v=1.9.0">
-  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js" defer></script><script src="/js/android.js?v=1.9.0" defer></script><script src="/js/app.js?v=1.9.0" defer></script><script src="/js/compliance.js?v=1.9.0" defer></script><script src="/js/realtime.js?v=1.9.0" defer></script><script src="/js/pwa.js?v=1.9.0" defer></script><script src="/js/v16.js?v=1.9.0" defer></script><script src="/js/ad-frequency.js?v=1.9.0" defer></script><script src="/js/ads.js?v=1.9.0" defer></script><script src="/js/smart-ads-admin.js?v=1.9.0" defer></script>
+  <link rel="stylesheet" href="/css/app.css?v=1.10.0"><link rel="stylesheet" href="/css/ads-hotfix.css?v=1.10.0"><link rel="stylesheet" href="/css/ad-creative-v2.css?v=1.10.0"><link rel="stylesheet" href="/css/ads-live-network.css?v=1.10.0"><link rel="stylesheet" href="/css/v11.css?v=1.10.0">
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js" defer></script><script src="/js/android.js?v=1.10.0" defer></script><script src="/js/app.js?v=1.10.0" defer></script><script src="/js/compliance.js?v=1.10.0" defer></script><script src="/js/realtime.js?v=1.10.0" defer></script><script src="/js/pwa.js?v=1.10.0" defer></script><script src="/js/v16.js?v=1.10.0" defer></script><script src="/js/ad-frequency.js?v=1.10.0" defer></script><script src="/js/ads.js?v=1.10.0" defer></script><script src="/js/smart-ads-admin.js?v=1.10.0" defer></script>
 </head>
 <body class="<%= /^\/chats\/[a-f0-9]{24}$/i.test(path || '') ? 'chat-detail-body' : '' %> <%= currentUser?.dataSaver ? 'data-saver' : '' %>" data-current-user-id="<%= currentUser?._id || '' %>" data-authenticated="<%= currentUser ? '1' : '0' %>" data-android-app="<%=isAndroidApp?'1':'0'%>"><div class="app-shell">
