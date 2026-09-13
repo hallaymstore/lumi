@@ -24,9 +24,7 @@
             </span>
 
             <span class="note-avatar-wrap <%= person.noteText ? 'has-note' : '' %>">
-              <span class="avatar note-avatar">
-                <% if(person.avatarUrl){ %><img src="<%=person.avatarUrl%>" alt=""><% } else { %><b><%=person.name[0].toUpperCase()%></b><% } %>
-              </span>
+              <span class="avatar note-avatar"><img src="<%=person.avatarUrl||'/icons/icon-192.png'%>" class="<%=person.avatarUrl?'':'avatar-fallback'%>" alt=""></span>
               <% if(isMe){ %><span class="note-plus"><i data-lucide="plus"></i></span><% } %>
             </span>
 
@@ -52,9 +50,7 @@
     </div>
 
     <div class="note-compose-preview">
-      <span class="avatar note-compose-avatar">
-        <% if(currentUser.avatarUrl){ %><img src="<%=currentUser.avatarUrl%>" alt=""><% } else { %><b><%=currentUser.name[0].toUpperCase()%></b><% } %>
-      </span>
+      <span class="avatar note-compose-avatar"><img src="<%=currentUser.avatarUrl||'/icons/icon-192.png'%>" class="<%=currentUser.avatarUrl?'':'avatar-fallback'%>" alt=""></span>
       <span class="note-compose-cloud" data-note-preview><%= currentUser.noteText || 'Bugun nimani o‘ylayapsiz? ✨' %></span>
     </div>
 
