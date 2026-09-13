@@ -1,9 +1,9 @@
 /* Lumi v1.1.0 — universal avatar geometry and profile/post management */
 :root{--lumi-avatar-bg:linear-gradient(135deg,#ff5f8f,#9b5cff)}
-.avatar,.profile-avatar,.story>span{box-sizing:border-box;aspect-ratio:1/1!important;border-radius:50%!important;overflow:hidden!important;flex:0 0 auto;position:relative;background:var(--lumi-avatar-bg) url('/icons/icon-192.png') center/70% 70% no-repeat}
-.avatar>img,.profile-avatar>img,.story>span>img{display:block!important;width:100%!important;height:100%!important;min-width:100%!important;min-height:100%!important;max-width:none!important;max-height:none!important;object-fit:cover!important;object-position:center!important;aspect-ratio:1/1!important;border-radius:50%!important}
-.avatar>b,.profile-avatar>b,.story>span>b{display:grid;width:100%;height:100%;place-items:center;border-radius:50%;background:rgba(255,255,255,.82);color:#8c3f73;font-weight:800;text-transform:uppercase}
-.avatar img.avatar-fallback,.profile-avatar img.avatar-fallback,.story>span img.avatar-fallback{object-fit:cover!important;background:#fff}
+.avatar,.avatar-mini,.profile-avatar,.story>span,.creator-pill>span{box-sizing:border-box;aspect-ratio:1/1!important;border-radius:50%!important;overflow:hidden!important;flex:0 0 auto;position:relative;background:var(--lumi-avatar-bg) url('/icons/icon-192.png') center/70% 70% no-repeat}
+.avatar>img,.avatar-mini>img,.profile-avatar>img,.story>span>img,.creator-pill>span>img{display:block!important;width:100%!important;height:100%!important;min-width:100%!important;min-height:100%!important;max-width:none!important;max-height:none!important;object-fit:cover!important;object-position:center!important;aspect-ratio:1/1!important;border-radius:50%!important}
+.avatar>b,.avatar>i,.avatar-mini>span,.profile-avatar>b,.story>span>b,.creator-pill>span>b{display:grid;width:100%;height:100%;place-items:center;border-radius:50%;background:rgba(255,255,255,.82);color:#8c3f73;font-weight:800;text-transform:uppercase}
+.avatar img.avatar-fallback,.avatar-mini img.avatar-fallback,.profile-avatar img.avatar-fallback,.story>span img.avatar-fallback,.creator-pill>span img.avatar-fallback{object-fit:cover!important;background:#fff}
 .profile-avatar{width:112px!important;height:112px!important;min-width:112px!important}
 .story>span{display:block!important;width:66px!important;height:66px!important;padding:3px}
 .story>span>img,.story>span>b{border:2px solid var(--surface,#fff)}
