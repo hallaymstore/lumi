@@ -27,8 +27,9 @@ import android.widget.ProgressBar;
 import android.widget.Toast;
 
 public class MainActivity extends Activity {
-    private static final String HOME_URL = "https://lumi-6yqp.onrender.com/feed";
-    private static final String APP_HOST = "lumi-6yqp.onrender.com";
+    private static final String HOME_URL = "https://www.lumisocial.site/feed";
+    private static final String APP_HOST = "www.lumisocial.site";
+    private static final String APEX_HOST = "lumisocial.site";
     private static final int FILE_CHOOSER_REQUEST = 7001;
     private static final int WEB_CAMERA_REQUEST = 7002;
 
@@ -66,7 +67,7 @@ public class MainActivity extends Activity {
         settings.setDisplayZoomControls(false);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         settings.setSafeBrowsingEnabled(true);
-        settings.setUserAgentString(settings.getUserAgentString() + " LumiAndroid/1.0.2");
+        settings.setUserAgentString(settings.getUserAgentString() + " LumiAndroid/1.1.0");
 
         CookieManager cookies = CookieManager.getInstance();
         cookies.setAcceptCookie(true);
@@ -80,12 +81,19 @@ public class MainActivity extends Activity {
     }
 
     private boolean isTrustedOrigin(Uri uri) {
-        return uri != null && "https".equalsIgnoreCase(uri.getScheme()) && APP_HOST.equalsIgnoreCase(uri.getHost());
+        if (uri == null || !"https".equalsIgnoreCase(uri.getScheme())) return false;
+        String host = uri.getHost();
+        return APP_HOST.equalsIgnoreCase(host) || APEX_HOST.equalsIgnoreCase(host);
     }
 
     private String resolveIncomingUrl(Uri uri) {
         if (uri == null) return HOME_URL;
-        if (isTrustedOrigin(uri)) return uri.toString();
+        if (isTrustedOrigin(uri)) {
+            String path = uri.getEncodedPath();
+            if (path == null || path.isEmpty()) path = "/feed";
+            String query = uri.getEncodedQuery();
+            return "https://" + APP_HOST + path + (query == null ? "" : "?" + query);
+        }
         if ("lumi".equalsIgnoreCase(uri.getScheme())) {
             String path = uri.getPath() == null || uri.getPath().isEmpty() ? "/feed" : uri.getPath();
             String query = uri.getEncodedQuery();
@@ -103,7 +111,10 @@ public class MainActivity extends Activity {
             else webView.loadUrl(resolveIncomingUrl(uri));
             return true;
         }
-        if ("https".equals(scheme) && APP_HOST.equals(host)) return false;
+        if ("https".equals(scheme) && (APP_HOST.equals(host) || APEX_HOST.equals(host))) {
+            if (APEX_HOST.equals(host)) { webView.loadUrl(resolveIncomingUrl(uri)); return true; }
+            return false;
+        }
         if ("https".equals(scheme) || "http".equals(scheme) || "mailto".equals(scheme) || "tel".equals(scheme)) {
             openExternal(uri.toString());
             return true;
