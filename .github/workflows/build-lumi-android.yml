@@ -29,28 +29,32 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.13'
-      - name: Build release APK and AAB
+      - name: Build optimized release APK and AAB
         run: gradle -p android-app --no-daemon clean assembleRelease bundleRelease
-      - name: Collect release outputs
+      - name: Collect release outputs and R8 mapping
         run: |
           mkdir -p android-dist/tools
           cp "$ANDROID_SDK_ROOT/build-tools/36.0.0/lib/apksigner.jar" android-dist/tools/apksigner.jar
-          cp android-app/app/build/outputs/apk/release/app-release-unsigned.apk android-dist/Lumi-v1.0.1-unsigned.apk
-          cp android-app/app/build/outputs/bundle/release/app-release.aab android-dist/Lumi-v1.0.1-unsigned.aab
+          cp android-app/app/build/outputs/apk/release/app-release-unsigned.apk android-dist/Lumi-v1.0.2-unsigned.apk
+          cp android-app/app/build/outputs/bundle/release/app-release.aab android-dist/Lumi-v1.0.2-unsigned.aab
+          cp android-app/app/build/outputs/mapping/release/mapping.txt android-dist/mapping.txt
           cat > android-dist/BUILD_INFO.txt <<'EOF'
-          Lumi Android 1.0.1
+          Lumi Android 1.0.2
           applicationId=uz.hallaym.lumi
-          versionCode=2
+          versionCode=3
           minSdk=26
           targetSdk=36
           compileSdk=36
+          R8=true
+          shrinkResources=true
           production=https://lumi-6yqp.onrender.com
-          These files are unsigned. Sign outside the public repository.
+          These APK/AAB files are unsigned. Sign outside the public repository.
+          mapping.txt is the exact R8 deobfuscation mapping for this build.
           EOF
       - name: Upload unsigned build
         uses: actions/upload-artifact@v4
         with:
-          name: lumi-android-v1.0.1-unsigned
+          name: lumi-android-v1.0.2-unsigned
           path: android-dist/
           if-no-files-found: error
           retention-days: 7
