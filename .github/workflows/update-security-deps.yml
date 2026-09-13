@@ -1,0 +1,37 @@
+name: Upgrade Lumi Security Dependencies
+
+on:
+  push:
+    branches: [security-deps-2026-09]
+    paths:
+      - '.github/workflows/update-security-deps.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: security-deps-2026-09
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Upgrade vulnerable production dependencies
+        run: npm install --save file-type@^22.1.0 sharp@^0.35.4
+      - name: Verify APIs used by Lumi
+        run: |
+          node -e "import('file-type').then(m=>{if(typeof m.fileTypeFromBuffer!=='function') process.exit(1)})"
+          node -e "const sharp=require('sharp'); sharp({create:{width:2,height:2,channels:4,background:{r:255,g:0,b:0,alpha:1}}}).webp().toBuffer().then(b=>{if(!b.length)process.exit(1)})"
+      - name: Production dependency audit
+        run: npm audit --omit=dev --audit-level=moderate
+      - name: Commit lockfile upgrade
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package.json package-lock.json
+          git diff --cached --quiet || git commit -m 'Upgrade file-type and sharp security fixes'
+          git push origin HEAD:security-deps-2026-09
