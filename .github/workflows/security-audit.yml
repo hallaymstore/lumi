@@ -1,0 +1,26 @@
+name: Lumi Production Dependency Audit
+
+on:
+  push:
+    branches: [play-compliance-audit]
+    paths:
+      - '.github/workflows/security-audit.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Production npm audit
+        run: npm audit --omit=dev --json > npm-audit.json || true
+      - name: Print audit summary
+        run: node -e "const a=require('./npm-audit.json'); console.log(JSON.stringify({metadata:a.metadata,vulnerabilities:a.vulnerabilities},null,2))"
