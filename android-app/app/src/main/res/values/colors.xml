@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="lumi_pink">#FF4F8B</color>
+    <color name="lumi_purple">#8C5CFF</color>
+    <color name="lumi_bg">#FFF7FB</color>
+    <color name="lumi_bg_dark">#120E14</color>
+</resources>
