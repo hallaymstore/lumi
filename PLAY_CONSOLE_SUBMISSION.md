@@ -22,12 +22,12 @@ Collected data likely includes:
 - Messages: direct messages and user chat content.
 - Photos and videos: user uploads and camera photos initiated by the user.
 - Files/docs: optional chat file uploads when used.
-- App activity: views, likes, comments, saves, shares, dwell time and other interactions used for functionality/personalization/analytics.
+- App activity: views, likes, comments, saves, shares, dwell time and other interactions used for functionality, personalization, analytics, and Lumi internal ad/marketing personalization/frequency control.
 - Device or other IDs / technical data: session identifiers, hashed security identifiers, user-agent and timestamps.
 
-Not requested by Lumi Android: precise location, contacts, health, financial data, SMS/call logs.
+Not requested by Lumi Android: precise location, contacts, health, financial data, SMS/call logs, microphone/audio recording permission.
 
-Purposes: app functionality, account management, personalization, analytics, fraud/security and developer communications where applicable.
+Purposes to review/select where applicable: app functionality, account management, personalization, analytics, advertising or marketing, fraud prevention/security, and developer communications.
 
 Security: data in transit uses HTTPS; passwords are hashed; MongoDB/R2 credentials remain server-side; users can request deletion in-app and on the public deletion page.
 
@@ -51,4 +51,4 @@ Android Play build intentionally does not render Adsterra network iframe placeme
 7. Provide reviewer account/instructions for authenticated features.
 8. Complete required closed testing for the developer account if Play Console requests it.
 9. Use Play App Signing and preserve the private upload key.
-10. Replace any credentials that have ever been committed to a public repository.
+10. Replace/rotate any database, storage or infrastructure credentials that have ever been committed to a public repository, then remove the tracked secret file/history exposure before production submission.
