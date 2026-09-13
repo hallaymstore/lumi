@@ -36,7 +36,8 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="lumi-6yqp.onrender.com" />
+                <data android:scheme="https" android:host="www.lumisocial.site" />
+                <data android:scheme="https" android:host="lumisocial.site" />
             </intent-filter>
 
             <intent-filter>
