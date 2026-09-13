@@ -26,7 +26,7 @@ router.post('/create-draft',requireAuth,upload.array('images',10),async(req,res)
   const caption=String(req.body.caption||'').trim().slice(0,2200);const files=req.files||[];
   if(!caption&&!files.length)throw new Error('Qoralama uchun caption yoki media kiriting.');
   const media=await uploadMedia(files);const mentionedUsers=await resolveMentions(caption);
-  const post=await Post.create({author:req.currentUser._id,caption,imageUrl:media[0]?.url||'',imageKey:media[0]?.key||'',media,tags:cleanTags(req.body.tags),mentions:mentionedUsers.map(u=>u._id),status:'draft',isHidden:true,draftSavedAt:new Date()});
+  await Post.create({author:req.currentUser._id,caption,imageUrl:media[0]?.url||'',imageKey:media[0]?.key||'',media,tags:cleanTags(req.body.tags),mentions:mentionedUsers.map(u=>u._id),status:'draft',isHidden:true,draftSavedAt:new Date()});
   res.redirect('/posts/drafts');
 }catch(e){res.status(400).render('posts/create',{title:'Yangi post',error:e.message||'Qoralama saqlanmadi.'})}});
 
@@ -49,6 +49,6 @@ router.post('/:id/archive',requireAuth,async(req,res)=>{const post=await ownPost
 router.post('/:id/unarchive',requireAuth,async(req,res)=>{const post=await ownPost(req);if(!post||post.status!=='archived')return res.sendStatus(404);post.status='published';post.isHidden=false;post.archivedAt=null;await post.save();await adjustPublishedCount(post.author,1);res.redirect('/u/'+req.currentUser.username)});
 router.post('/:id/publish',requireAuth,async(req,res)=>{const post=await ownPost(req);if(!post||post.status!=='draft')return res.sendStatus(404);if(!(post.media||[]).length&&!post.imageUrl)return res.status(400).render('posts/edit',{title:'Postni tahrirlash',post,error:'Postni chiqarish uchun kamida bitta media qo‘shing.'});post.status='published';post.isHidden=false;post.draftSavedAt=null;await post.save();await adjustPublishedCount(post.author,1);res.redirect('/p/'+post._id)});
 
-router.post('/:id/delete',requireAuth,async(req,res)=>{const post=await ownPost(req);if(!post)return res.sendStatus(404);const wasPublished=(post.status||'published')==='published';await deleteMany(mediaKeys(post)).catch(()=>{});await Promise.all([PostLike.deleteMany({post:post._id}),SavedPost.deleteMany({post:post._id}),Comment.deleteMany({post:post._id}),PostView.deleteMany({post:post._id}),Post.findByIdAndDelete(post._id)]);if(wasPublished)await adjustPublishedCount(post.author,-1);res.redirect('/u/'+req.currentUser.username)});
+router.post('/:id/delete',requireAuth,async(req,res)=>{const post=await Post.findById(req.params.id);if(!post)return res.sendStatus(404);const isOwner=String(post.author)===String(req.currentUser._id),canModerate=['admin','moderator'].includes(req.currentUser.role);if(!isOwner&&!canModerate)return res.sendStatus(403);const wasPublished=(post.status||'published')==='published';await deleteMany(mediaKeys(post)).catch(()=>{});await Promise.all([PostLike.deleteMany({post:post._id}),SavedPost.deleteMany({post:post._id}),Comment.deleteMany({post:post._id}),PostView.deleteMany({post:post._id}),Post.findByIdAndDelete(post._id)]);if(wasPublished)await adjustPublishedCount(post.author,-1);res.redirect(isOwner?'/u/'+req.currentUser.username:'/admin')});
 
 module.exports=router;
