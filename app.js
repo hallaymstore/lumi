@@ -1,4 +1,7 @@
+const requiredRuntimeKeys=['MONGODB_URI','R2_ACCOUNT_ID','R2_ACCESS_KEY_ID','R2_SECRET_ACCESS_KEY','R2_BUCKET','R2_PUBLIC_URL','TURN_TOKEN_ID','TURN_API_TOKEN','SESSION_SECRET','VIEW_HASH_SALT'];
+const nativeRuntimeEnv=new Set(Object.keys(process.env));
 require('dotenv').config();
+console.log('ENV_SOURCE_CHECK '+requiredRuntimeKeys.map(k=>`${k}=${nativeRuntimeEnv.has(k)?'render':'dotenv-or-missing'}`).join(' '));
 const path=require('path');const express=require('express');const session=require('express-session');const MongoStore=require('connect-mongo');const helmet=require('helmet');const rateLimit=require('express-rate-limit');const methodOverride=require('method-override');
 const connectDB=require('./config/db');const currentUser=require('./middleware/currentUser');const {termsGate}=require('./middleware/terms');const {buildFeed}=require('./services/feed');const {startEphemeralCleanup}=require('./services/ephemeralCleanup');const {startMediaLifecycle}=require('./services/mediaLifecycle');const {initRealtime}=require('./services/realtime');const {initPush}=require('./services/push');const {ensureAdmin}=require('./services/adminBootstrap');const {sameOriginGuard}=require('./middleware/security');
 const app=express();app.set('view engine','ejs');app.set('views',path.join(__dirname,'views'));app.set('trust proxy',1);
