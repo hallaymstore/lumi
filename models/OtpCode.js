@@ -5,7 +5,7 @@ const schema = new mongoose.Schema({
   codeHash:{ type:String, required:true },
   attempts:{ type:Number, default:0 },
   verifiedAt:{ type:Date, default:null },
-  expiresAt:{ type:Date, required:true, index:true }
+  expiresAt:{ type:Date, required:true }
 },{timestamps:true});
 schema.index({phone:1,purpose:1,createdAt:-1});
 schema.index({expiresAt:1},{expireAfterSeconds:0});
