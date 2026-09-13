@@ -9,10 +9,11 @@ const userSchema = new mongoose.Schema({
   bio:{type:String,maxlength:220,default:''}, avatarUrl:{type:String,default:''}, avatarKey:{type:String,default:''}, coverUrl:{type:String,default:''},
   role:{type:String,enum:['user','creator','moderator','admin'],default:'user'},
   isVerified:{type:Boolean,default:false}, isSuspended:{type:Boolean,default:false}, suspendedUntil:{type:Date,default:null}, ageConfirmed18:{type:Boolean,required:true,default:false},
+  termsAcceptedAt:{type:Date,default:null}, termsVersion:{type:String,default:''},
   isPrivate:{type:Boolean,default:false},
-  followers:[{type:mongoose.Schema.Types.ObjectId,ref:'User'}], // legacy
-  following:[{type:mongoose.Schema.Types.ObjectId,ref:'User'}], // legacy
-  savedPosts:[{type:mongoose.Schema.Types.ObjectId,ref:'Post'}], // legacy
+  followers:[{type:mongoose.Schema.Types.ObjectId,ref:'User'}],
+  following:[{type:mongoose.Schema.Types.ObjectId,ref:'User'}],
+  savedPosts:[{type:mongoose.Schema.Types.ObjectId,ref:'Post'}],
   followerCount:{type:Number,default:0,min:0,index:true}, followingCount:{type:Number,default:0,min:0}, postCount:{type:Number,default:0,min:0},
   noteText:{type:String,trim:true,maxlength:60,default:''}, noteExpiresAt:{type:Date,default:null},
   allowMessages:{type:String,enum:['everyone','following','nobody'],default:'following'},

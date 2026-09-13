@@ -2,18 +2,20 @@ package uz.hallaym.lumi;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.Uri;
+import android.net.http.SslError;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.view.View;
 import android.webkit.CookieManager;
+import android.webkit.JavascriptInterface;
 import android.webkit.PermissionRequest;
 import android.webkit.SslErrorHandler;
-import android.net.http.SslError;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
@@ -24,14 +26,11 @@ import android.webkit.WebViewClient;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class MainActivity extends Activity {
     private static final String HOME_URL = "https://lumi-6yqp.onrender.com/feed";
     private static final String APP_HOST = "lumi-6yqp.onrender.com";
     private static final int FILE_CHOOSER_REQUEST = 7001;
-    private static final int WEB_PERMISSION_REQUEST = 7002;
+    private static final int WEB_CAMERA_REQUEST = 7002;
 
     private WebView webView;
     private ProgressBar progressBar;
@@ -43,11 +42,9 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         webView = findViewById(R.id.webview);
         progressBar = findViewById(R.id.progress);
         configureWebView();
-
         Uri incoming = getIntent() != null ? getIntent().getData() : null;
         webView.loadUrl(resolveIncomingUrl(incoming));
     }
@@ -59,29 +56,38 @@ public class MainActivity extends Activity {
         settings.setDatabaseEnabled(true);
         settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(true);
+        settings.setAllowFileAccessFromFileURLs(false);
+        settings.setAllowUniversalAccessFromFileURLs(false);
+        settings.setGeolocationEnabled(false);
+        settings.setSaveFormData(false);
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setSupportMultipleWindows(false);
         settings.setBuiltInZoomControls(false);
         settings.setDisplayZoomControls(false);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        settings.setUserAgentString(settings.getUserAgentString() + " LumiAndroid/1.0.0");
+        settings.setSafeBrowsingEnabled(true);
+        settings.setUserAgentString(settings.getUserAgentString() + " LumiAndroid/1.0.1");
 
         CookieManager cookies = CookieManager.getInstance();
         cookies.setAcceptCookie(true);
-        cookies.setAcceptThirdPartyCookies(webView, true);
+        cookies.setAcceptThirdPartyCookies(webView, false);
 
+        webView.addJavascriptInterface(new AndroidBridge(), "LumiAndroid");
         webView.setBackgroundColor(Color.TRANSPARENT);
         webView.setWebViewClient(new LumiWebViewClient());
         webView.setWebChromeClient(new LumiChromeClient());
         webView.setDownloadListener((url, userAgent, contentDisposition, mimetype, contentLength) -> openExternal(url));
     }
 
+    private boolean isTrustedOrigin(Uri uri) {
+        return uri != null && "https".equalsIgnoreCase(uri.getScheme()) && APP_HOST.equalsIgnoreCase(uri.getHost());
+    }
+
     private String resolveIncomingUrl(Uri uri) {
         if (uri == null) return HOME_URL;
-        String scheme = uri.getScheme();
-        if ("https".equalsIgnoreCase(scheme) && APP_HOST.equalsIgnoreCase(uri.getHost())) return uri.toString();
-        if ("lumi".equalsIgnoreCase(scheme)) {
-            String path = uri.getPath() == null ? "/feed" : uri.getPath();
+        if (isTrustedOrigin(uri)) return uri.toString();
+        if ("lumi".equalsIgnoreCase(uri.getScheme())) {
+            String path = uri.getPath() == null || uri.getPath().isEmpty() ? "/feed" : uri.getPath();
             String query = uri.getEncodedQuery();
             return "https://" + APP_HOST + path + (query == null ? "" : "?" + query);
         }
@@ -92,26 +98,22 @@ public class MainActivity extends Activity {
         if (uri == null) return false;
         String scheme = uri.getScheme() == null ? "" : uri.getScheme().toLowerCase();
         String host = uri.getHost() == null ? "" : uri.getHost().toLowerCase();
-
         if ("lumi".equals(scheme)) {
             if ("reload".equalsIgnoreCase(host)) webView.reload();
             else webView.loadUrl(resolveIncomingUrl(uri));
             return true;
         }
-        if (("https".equals(scheme) || "http".equals(scheme)) && APP_HOST.equals(host)) return false;
+        if ("https".equals(scheme) && APP_HOST.equals(host)) return false;
         if ("https".equals(scheme) || "http".equals(scheme) || "mailto".equals(scheme) || "tel".equals(scheme)) {
             openExternal(uri.toString());
             return true;
         }
-        return false;
+        return true;
     }
 
     private void openExternal(String url) {
-        try {
-            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
-        } catch (Exception ignored) {
-            Toast.makeText(this, "Havolani ochib bo‘lmadi", Toast.LENGTH_SHORT).show();
-        }
+        try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); }
+        catch (Exception ignored) { Toast.makeText(this, "Havolani ochib bo‘lmadi", Toast.LENGTH_SHORT).show(); }
     }
 
     private void showOffline() {
@@ -121,141 +123,97 @@ public class MainActivity extends Activity {
         webView.loadDataWithBaseURL("https://" + APP_HOST, html, "text/html", "utf-8", null);
     }
 
-    @Override
-    protected void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
-        setIntent(intent);
+    @Override protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent); setIntent(intent);
         if (intent != null && intent.getData() != null) webView.loadUrl(resolveIncomingUrl(intent.getData()));
     }
 
-    @Override
-    public void onBackPressed() {
-        if (webView != null && webView.canGoBack()) webView.goBack();
-        else super.onBackPressed();
+    @Override public void onBackPressed() {
+        if (webView != null && webView.canGoBack()) webView.goBack(); else super.onBackPressed();
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode != FILE_CHOOSER_REQUEST || fileCallback == null) return;
-
         Uri[] result = null;
         if (resultCode == RESULT_OK) {
-            if (data == null && cameraOutputUri != null) {
-                result = new Uri[]{cameraOutputUri};
-            } else {
-                result = WebChromeClient.FileChooserParams.parseResult(resultCode, data);
-            }
+            if (data == null && cameraOutputUri != null) result = new Uri[]{cameraOutputUri};
+            else result = WebChromeClient.FileChooserParams.parseResult(resultCode, data);
         }
-        fileCallback.onReceiveValue(result);
-        fileCallback = null;
-        cameraOutputUri = null;
+        fileCallback.onReceiveValue(result); fileCallback = null; cameraOutputUri = null;
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+    @Override public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode != WEB_PERMISSION_REQUEST || pendingWebPermission == null) return;
-
-        List<String> granted = new ArrayList<>();
-        for (String resource : pendingWebPermission.getResources()) {
-            if (PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(resource) && checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) granted.add(resource);
-            if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(resource) && checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) granted.add(resource);
-        }
-        if (granted.isEmpty()) pendingWebPermission.deny();
-        else pendingWebPermission.grant(granted.toArray(new String[0]));
+        if (requestCode != WEB_CAMERA_REQUEST || pendingWebPermission == null) return;
+        if (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) pendingWebPermission.grant(new String[]{PermissionRequest.RESOURCE_VIDEO_CAPTURE});
+        else pendingWebPermission.deny();
         pendingWebPermission = null;
     }
 
+    private void requestWebCamera(PermissionRequest request) {
+        pendingWebPermission = request;
+        if (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            request.grant(new String[]{PermissionRequest.RESOURCE_VIDEO_CAPTURE}); pendingWebPermission = null; return;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle("Kamera ruxsati")
+                .setMessage("Lumi kamerani faqat siz kamera funksiyasini ochganingizda surat olish uchun ishlatadi. Preview qurilmangizda ko‘rsatiladi; surat faqat siz yuborishni tanlaganingizdan keyin serverga uzatiladi.")
+                .setPositiveButton("Davom etish", (d,w) -> requestPermissions(new String[]{Manifest.permission.CAMERA}, WEB_CAMERA_REQUEST))
+                .setNegativeButton("Bekor qilish", (d,w) -> { request.deny(); pendingWebPermission = null; })
+                .setOnCancelListener(d -> { request.deny(); pendingWebPermission = null; })
+                .show();
+    }
+
     private class LumiWebViewClient extends WebViewClient {
-        @Override
-        public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-            return handleUri(request.getUrl());
-        }
-
-        @Override
-        public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
-            handler.cancel();
-            Toast.makeText(MainActivity.this, "Xavfsiz SSL ulanishi amalga oshmadi", Toast.LENGTH_LONG).show();
-        }
-
-        @Override
-        public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
-            if (request.isForMainFrame()) showOffline();
-        }
+        @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) { return handleUri(request.getUrl()); }
+        @Override public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) { handler.cancel(); Toast.makeText(MainActivity.this, "Xavfsiz SSL ulanishi amalga oshmadi", Toast.LENGTH_LONG).show(); }
+        @Override public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) { if (request.isForMainFrame()) showOffline(); }
     }
 
     private class LumiChromeClient extends WebChromeClient {
-        @Override
-        public void onProgressChanged(WebView view, int newProgress) {
-            progressBar.setProgress(newProgress);
-            progressBar.setVisibility(newProgress >= 100 ? View.GONE : View.VISIBLE);
-        }
-
-        @Override
-        public void onPermissionRequest(PermissionRequest request) {
+        @Override public void onProgressChanged(WebView view, int newProgress) { progressBar.setProgress(newProgress); progressBar.setVisibility(newProgress >= 100 ? View.GONE : View.VISIBLE); }
+        @Override public void onPermissionRequest(PermissionRequest request) {
             runOnUiThread(() -> {
-                List<String> androidPermissions = new ArrayList<>();
-                for (String resource : request.getResources()) {
-                    if (PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(resource) && checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) androidPermissions.add(Manifest.permission.CAMERA);
-                    if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(resource) && checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) androidPermissions.add(Manifest.permission.RECORD_AUDIO);
-                }
-                if (androidPermissions.isEmpty()) request.grant(request.getResources());
-                else {
-                    pendingWebPermission = request;
-                    requestPermissions(androidPermissions.toArray(new String[0]), WEB_PERMISSION_REQUEST);
-                }
+                if (!isTrustedOrigin(request.getOrigin())) { request.deny(); return; }
+                boolean video=false; for(String resource:request.getResources()) if(PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(resource)) video=true;
+                if (!video) { request.deny(); return; }
+                requestWebCamera(request);
             });
         }
-
-        @Override
-        public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
-            if (fileCallback != null) fileCallback.onReceiveValue(null);
-            fileCallback = filePathCallback;
-
-            Intent contentIntent = new Intent(Intent.ACTION_GET_CONTENT);
-            contentIntent.addCategory(Intent.CATEGORY_OPENABLE);
-            contentIntent.setType(resolveMime(fileChooserParams.getAcceptTypes()));
-            contentIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, fileChooserParams.getMode() == FileChooserParams.MODE_OPEN_MULTIPLE);
-
-            if (fileChooserParams.isCaptureEnabled() && resolveMime(fileChooserParams.getAcceptTypes()).startsWith("image/")) {
-                Intent cameraIntent = buildCameraIntent();
-                if (cameraIntent != null) {
-                    startActivityForResult(cameraIntent, FILE_CHOOSER_REQUEST);
-                    return true;
-                }
+        @Override public void onPermissionRequestCanceled(PermissionRequest request) { if (pendingWebPermission == request) pendingWebPermission = null; }
+        @Override public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams params) {
+            if (fileCallback != null) fileCallback.onReceiveValue(null); fileCallback = filePathCallback;
+            Intent content = new Intent(Intent.ACTION_GET_CONTENT); content.addCategory(Intent.CATEGORY_OPENABLE); content.setType(resolveMime(params.getAcceptTypes())); content.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, params.getMode()==FileChooserParams.MODE_OPEN_MULTIPLE);
+            if (params.isCaptureEnabled() && resolveMime(params.getAcceptTypes()).startsWith("image/")) {
+                Intent camera=buildCameraIntent(); if(camera!=null){startActivityForResult(camera,FILE_CHOOSER_REQUEST);return true;}
             }
+            Intent chooser=Intent.createChooser(content,"Fayl tanlang"); Intent camera=buildCameraIntent(); if(camera!=null)chooser.putExtra(Intent.EXTRA_INITIAL_INTENTS,new Intent[]{camera}); startActivityForResult(chooser,FILE_CHOOSER_REQUEST); return true;
+        }
+    }
 
-            Intent chooser = Intent.createChooser(contentIntent, "Fayl tanlang");
-            Intent cameraIntent = buildCameraIntent();
-            if (cameraIntent != null) chooser.putExtra(Intent.EXTRA_INITIAL_INTENTS, new Intent[]{cameraIntent});
-            startActivityForResult(chooser, FILE_CHOOSER_REQUEST);
-            return true;
+    private class AndroidBridge {
+        @JavascriptInterface public void share(String title, String text, String url) {
+            runOnUiThread(() -> {
+                try {
+                    Intent send=new Intent(Intent.ACTION_SEND); send.setType("text/plain"); send.putExtra(Intent.EXTRA_SUBJECT,title); send.putExtra(Intent.EXTRA_TEXT,(text==null?"":text)+"\n"+(url==null?"":url)); startActivity(Intent.createChooser(send,"Ulashish"));
+                } catch(Exception ignored){ Toast.makeText(MainActivity.this,"Ulashib bo‘lmadi",Toast.LENGTH_SHORT).show(); }
+            });
         }
     }
 
     private String resolveMime(String[] acceptTypes) {
-        if (acceptTypes == null || acceptTypes.length == 0) return "*/*";
-        for (String type : acceptTypes) {
-            if (type != null && !type.trim().isEmpty() && !"*/*".equals(type)) return type;
-        }
+        if (acceptTypes==null||acceptTypes.length==0)return "*/*";
+        for(String type:acceptTypes)if(type!=null&&!type.trim().isEmpty()&&!"*/*".equals(type))return type;
         return "*/*";
     }
 
     private Intent buildCameraIntent() {
         if (!getPackageManager().hasSystemFeature("android.hardware.camera.any")) return null;
         try {
-            ContentValues values = new ContentValues();
-            values.put(MediaStore.Images.Media.DISPLAY_NAME, "lumi_" + System.currentTimeMillis() + ".jpg");
-            values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
-            cameraOutputUri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-            if (cameraOutputUri == null) return null;
-            Intent camera = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-            camera.putExtra(MediaStore.EXTRA_OUTPUT, cameraOutputUri);
-            camera.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            return camera.resolveActivity(getPackageManager()) == null ? null : camera;
-        } catch (Exception ignored) {
-            return null;
-        }
+            ContentValues values=new ContentValues(); values.put(MediaStore.Images.Media.DISPLAY_NAME,"lumi_"+System.currentTimeMillis()+".jpg"); values.put(MediaStore.Images.Media.MIME_TYPE,"image/jpeg");
+            cameraOutputUri=getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,values); if(cameraOutputUri==null)return null;
+            Intent camera=new Intent(MediaStore.ACTION_IMAGE_CAPTURE); camera.putExtra(MediaStore.EXTRA_OUTPUT,cameraOutputUri); camera.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION|Intent.FLAG_GRANT_READ_URI_PERMISSION); return camera.resolveActivity(getPackageManager())==null?null:camera;
+        } catch(Exception ignored){return null;}
     }
 }

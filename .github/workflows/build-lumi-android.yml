@@ -16,47 +16,41 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-
       - name: Android SDK
         uses: android-actions/setup-android@v3
-
       - name: Install Android 16 SDK
         run: yes | sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
-
       - name: Gradle 8.13
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.13'
-
       - name: Build release APK and AAB
         run: gradle -p android-app --no-daemon clean assembleRelease bundleRelease
-
-      - name: Collect signing utility
+      - name: Collect release outputs
         run: |
           mkdir -p android-dist/tools
           cp "$ANDROID_SDK_ROOT/build-tools/36.0.0/lib/apksigner.jar" android-dist/tools/apksigner.jar
-          cp android-app/app/build/outputs/apk/release/app-release-unsigned.apk android-dist/Lumi-v1.0.0-unsigned.apk
-          cp android-app/app/build/outputs/bundle/release/app-release.aab android-dist/Lumi-v1.0.0-unsigned.aab
+          cp android-app/app/build/outputs/apk/release/app-release-unsigned.apk android-dist/Lumi-v1.0.1-unsigned.apk
+          cp android-app/app/build/outputs/bundle/release/app-release.aab android-dist/Lumi-v1.0.1-unsigned.aab
           cat > android-dist/BUILD_INFO.txt <<'EOF'
-          Lumi Android 1.0.0
+          Lumi Android 1.0.1
           applicationId=uz.hallaym.lumi
+          versionCode=2
           minSdk=26
           targetSdk=36
           compileSdk=36
           production=https://lumi-6yqp.onrender.com
           These files are unsigned. Sign outside the public repository.
           EOF
-
       - name: Upload unsigned build
         uses: actions/upload-artifact@v4
         with:
-          name: lumi-android-unsigned
+          name: lumi-android-v1.0.1-unsigned
           path: android-dist/
           if-no-files-found: error
           retention-days: 7

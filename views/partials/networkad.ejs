@@ -1,4 +1,4 @@
-<%
+<% if(!isAndroidApp){ %><%
 const isNative=variant==='native';
 const isSidebar=variant==='sidebar';
 const desktopFormat=isNative?'rectangle':isSidebar?'rectangle':'desktop';
@@ -8,41 +8,6 @@ const visibleSeconds=Math.max(8,Math.min(30,Number(adConfig?.networkVisibleSecon
 const cooldownSeconds=Math.max(15,Math.min(120,Number(adConfig?.networkCooldownSeconds||28)));
 %>
 <article class="network-ad-card network-<%=variant%>" data-network-ad data-network-placement="<%=placement%>" data-network-format="<%=desktopFormat%>" data-network-mobile-format="<%=mobileFormat%>" data-network-desktop-format="<%=desktopFormat%>" data-network-delay="<%=unlockSeconds%>" data-network-visible="<%=visibleSeconds%>" data-network-cooldown="<%=cooldownSeconds%>">
-  <header class="network-ad-head">
-    <span class="network-brandmark"><i data-lucide="sparkles"></i></span>
-    <span class="network-ad-identity"><strong>Homiylik reklama</strong><small>Adsterra network</small></span>
-    <span class="network-live-chip" data-network-live-chip><i data-lucide="loader-circle"></i><b data-network-status>Yuklanmoqda</b></span>
-    <span class="network-sponsored"><i data-lucide="badge-info"></i> <%=adConfig?.label||'Reklama'%></span>
-  </header>
-
-  <div class="network-frame-wrap" data-network-frame-wrap>
-    <div class="network-backdrop" aria-hidden="true">
-      <i></i><i></i>
-      <span><b>Reklama yuklanmoqda</b><small>Haqiqiy Adsterra creative tekshirilmoqda</small></span>
-    </div>
-
-    <div class="network-frame-shell" data-network-frame-shell>
-      <iframe
-        data-network-frame
-        data-mobile="/ads/network/<%=mobileFormat%>?v=1.7.6"
-        data-desktop="/ads/network/<%=desktopFormat%>?v=1.7.6"
-        title="Adsterra reklama"
-        loading="lazy"
-        scrolling="no"
-        referrerpolicy="no-referrer-when-downgrade"
-        sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox allow-forms allow-top-navigation-by-user-activation"></iframe>
-    </div>
-
-    <div class="network-ad-lock" data-network-lock>
-      <span class="network-lock-icon"><i data-lucide="loader-circle"></i></span>
-      <span><small data-network-lock-label>Haqiqiy reklama yuklanmoqda</small><b data-network-timer hidden><em data-network-countdown><%=unlockSeconds%></em> soniya</b></span>
-    </div>
-
-    <div class="network-watch-timer" data-network-watch hidden><i data-lucide="timer-reset"></i><b data-network-visible-countdown><%=visibleSeconds%></b><span>s</span></div>
-  </div>
-
-  <footer class="network-ad-foot">
-    <span><i data-lucide="shield-check"></i> Adsterra creative</span>
-    <small data-network-footnote>Provider reklama berganida shu yerda asl banner ko‘rinadi</small>
-  </footer>
-</article>
+<header class="network-ad-head"><span class="network-brandmark"><i data-lucide="sparkles"></i></span><span class="network-ad-identity"><strong>Homiylik reklama</strong><small>Adsterra network</small></span><span class="network-live-chip" data-network-live-chip><i data-lucide="loader-circle"></i><b data-network-status>Yuklanmoqda</b></span><span class="network-sponsored"><i data-lucide="badge-info"></i> <%=adConfig?.label||'Reklama'%></span></header>
+<div class="network-frame-wrap" data-network-frame-wrap><div class="network-backdrop" aria-hidden="true"><i></i><i></i><span><b>Reklama yuklanmoqda</b><small>Haqiqiy Adsterra creative tekshirilmoqda</small></span></div><div class="network-frame-shell" data-network-frame-shell><iframe data-network-frame data-mobile="/ads/network/<%=mobileFormat%>?v=1.9.0" data-desktop="/ads/network/<%=desktopFormat%>?v=1.9.0" title="Adsterra reklama" loading="lazy" scrolling="no" referrerpolicy="no-referrer-when-downgrade" sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox allow-forms allow-top-navigation-by-user-activation"></iframe></div><div class="network-ad-lock" data-network-lock><span class="network-lock-icon"><i data-lucide="loader-circle"></i></span><span><small data-network-lock-label>Haqiqiy reklama yuklanmoqda</small><b data-network-timer hidden><em data-network-countdown><%=unlockSeconds%></em> soniya</b></span></div><div class="network-watch-timer" data-network-watch hidden><i data-lucide="timer-reset"></i><b data-network-visible-countdown><%=visibleSeconds%></b><span>s</span></div></div>
+<footer class="network-ad-foot"><span><i data-lucide="shield-check"></i> Adsterra creative</span><small data-network-footnote>Provider reklama berganida shu yerda asl banner ko‘rinadi</small></footer></article><% } %>

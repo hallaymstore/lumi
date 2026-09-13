@@ -6,6 +6,7 @@
   <label>Username<input name="username" required minlength="3" maxlength="24" placeholder="masalan: beauty.uz" autocapitalize="none"></label>
   <label>Telefon raqam<input type="tel" name="phone" required data-phone-input inputmode="tel" autocomplete="tel" placeholder="+998 90 123 45 67"></label>
   <label>Parol<input type="password" name="password" required minlength="8" autocomplete="new-password" placeholder="Kamida 8 belgi"></label>
-  <label class="check"><input type="checkbox" name="ageConfirmed18" value="1" required><span>Men 18 yoshga to‘lganman va qoidalarga roziman.</span></label>
+  <label class="check"><input type="checkbox" name="ageConfirmed18" value="1" required><span>Men 18 yoshga to‘lganman.</span></label>
+  <label class="check"><input type="checkbox" name="termsAccepted" value="1" required><span>Men <a href="/terms" target="_blank" rel="noopener">Foydalanish shartlari</a> va <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a> bilan tanishdim va roziman.</span></label>
   <button class="btn primary full">Akkaunt yaratish</button><p class="form-foot">Akkauntingiz bormi? <a href="/login?next=<%= encodeURIComponent(next || '/feed') %>">Kirish</a></p>
 </form></main><%- include('../partials/footer') %>
