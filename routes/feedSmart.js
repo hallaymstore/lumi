@@ -12,6 +12,15 @@ router.get('/feed', async (req, res) => {
   const nonce = req.query.refresh || Date.now();
 
   let posts = await buildFeed(me, { mode, limit: 50, nonce });
+  // Explicit onboarding interests give the cold-start feed a useful signal before enough
+  // behavioral events exist. They never use sensitive inferred traits.
+  if (me && mode === 'foryou' && Array.isArray(me.interests) && me.interests.length) {
+    const interests = new Set(me.interests.map(x => String(x).toLowerCase()));
+    posts = posts.map((p, i) => {
+      const matches = (p.tags || []).filter(t => interests.has(String(t).toLowerCase())).length;
+      return { ...p, _interestRank: Number(p._feedScore || 0) + Math.min(14, matches * 7) - i * 0.0001 };
+    }).sort((a, b) => b._interestRank - a._interestRank);
+  }
   posts = await decoratePosts(posts, me?._id);
 
   const [storyPeople, shareTargets, adConfig, feedAds] = await Promise.all([
@@ -38,6 +47,7 @@ router.get('/feed', async (req, res) => {
     adPositions,
     feedNonce: nonce,
     feedMode: mode,
+    needsInterestOnboarding: !!me && !(me.interests || []).length,
     metaDescription: 'Lumi feed — For You algoritmi, following, yangi postlar va Smart Ad Delivery.'
   });
 });

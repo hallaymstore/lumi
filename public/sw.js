@@ -1,11 +1,16 @@
-const CACHE='lumi-shell-v1.7.3';
-const STATIC=['/offline.html','/css/app.css?v=1.7.3','/js/app.js?v=1.7.3','/js/realtime.js?v=1.7.3','/js/pwa.js?v=1.7.3','/js/v16.js?v=1.7.3','/js/ads.js?v=1.7.3','/icons/icon-192.png','/icons/icon-512.png','/manifest.webmanifest?v=1.7.3'];
+const CACHE='lumi-shell-v1.11.0';
+const STATIC=['/offline.html','/css/app.css?v=1.11.0','/css/growth.css?v=1.11.0','/js/app.js?v=1.11.0','/js/realtime.js?v=1.11.0','/js/pwa.js?v=1.11.0','/js/v16.js?v=1.11.0','/js/stream-upload.js?v=1.11.0','/js/ads.js?v=1.11.0','/icons/icon-192.png','/icons/icon-512.png','/manifest.webmanifest?v=1.11.0'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(STATIC)).catch(()=>{}).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',e=>{const req=e.request;if(req.method!=='GET')return;const url=new URL(req.url);if(url.origin!==location.origin)return;
   if(url.pathname.startsWith('/css/')||url.pathname.startsWith('/js/')){e.respondWith(fetch(req).then(r=>{const copy=r.clone();caches.open(CACHE).then(c=>c.put(req,copy));return r}).catch(()=>caches.match(req)));return}
   if(url.pathname.startsWith('/icons/')||url.pathname==='/manifest.webmanifest'){e.respondWith(caches.match(req).then(hit=>hit||fetch(req).then(r=>{const copy=r.clone();caches.open(CACHE).then(c=>c.put(req,copy));return r})));return}
-  if(req.mode==='navigate'){e.respondWith(fetch(req).catch(()=>caches.match('/offline.html')))}
+  if(url.pathname==='/api/public/trending-cache'){e.respondWith(fetch(req).then(r=>{if(r.ok){const copy=r.clone();caches.open(CACHE).then(c=>c.put(req,copy))}return r}).catch(()=>caches.match(req)));return}
+  if(req.mode==='navigate'){
+    // Account-specific HTML is never persisted in Cache Storage. This avoids exposing
+    // personalized feed/chat/settings after logout or on a shared device.
+    e.respondWith(fetch(req).catch(()=>caches.match('/offline.html')))
+  }
 });
 self.addEventListener('push',e=>{let data={};try{data=e.data?.json()||{}}catch{data={body:e.data?.text()||'Yangi bildirishnoma'}};e.waitUntil(self.registration.showNotification(data.title||'Lumi',{body:data.body||'Yangi faollik',icon:'/icons/icon-192.png',badge:'/icons/icon-192.png',data:{url:data.url||'/notifications'},tag:data.tag||'lumi-notification',renotify:true}))});
 self.addEventListener('notificationclick',e=>{e.notification.close();const url=e.notification.data?.url||'/notifications';e.waitUntil(clients.matchAll({type:'window',includeUncontrolled:true}).then(list=>{for(const c of list){if('focus'in c){c.navigate(url);return c.focus()}}return clients.openWindow(url)}))});

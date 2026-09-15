@@ -1,0 +1,4 @@
+const router=require('express').Router();
+const Post=require('../models/Post');
+router.get('/api/public/trending-cache',async(req,res)=>{const rows=await Post.find({isHidden:false}).sort({qualityScore:-1,viewCount:-1,createdAt:-1}).limit(50).populate('author','name username avatarUrl isPrivate isSuspended').lean();const posts=rows.filter(p=>p.author&&!p.author.isPrivate&&!p.author.isSuspended).slice(0,20).map(p=>{const m=(p.media&&p.media[0])||{url:p.imageUrl,type:'image'};return {id:String(p._id),caption:String(p.caption||'').slice(0,180),imageUrl:m.type==='image'?(m.thumbUrl||m.url||p.imageUrl):'',mediaType:m.type||'image',author:{name:p.author.name,username:p.author.username},likes:Number(p.likeCount||0),views:Number(p.viewCount||0)}});res.set('Cache-Control','public, max-age=120, stale-while-revalidate=3600');res.json({ok:true,generatedAt:new Date().toISOString(),posts})});
+module.exports=router;

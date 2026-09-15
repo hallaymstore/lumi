@@ -21,6 +21,20 @@ function compatible(claimed,detected){
 }
 async function put(buffer,key,contentType,cacheControl='public, max-age=31536000, immutable'){if(!configured())throw new Error('R2 sozlanmagan. R2_* .env qiymatlarini kiriting.');await client().send(new PutObjectCommand({Bucket:process.env.R2_BUCKET,Key:key,Body:buffer,ContentType:contentType,CacheControl:cacheControl}));return {key,url:publicUrl(key)}}
 
+async function uploadStream(stream,prefix='media',contentType='application/octet-stream',contentLength=0){
+  if(!configured())throw new Error('R2 sozlanmagan.');
+  const allowed={
+    'image/jpeg':'jpg','image/png':'png','image/webp':'webp','image/avif':'avif',
+    'video/mp4':'mp4','video/webm':'webm'
+  };
+  const mime=String(contentType||'').toLowerCase();const ext=allowed[mime];
+  if(!ext)throw new Error('Bu media turi qo‘llanmaydi.');
+  const size=Number(contentLength||0);if(!Number.isFinite(size)||size<=0)throw new Error('Fayl hajmi aniqlanmadi.');
+  const key=`${String(prefix||'media').replace(/[^a-z0-9_\-/]/gi,'').replace(/^\/+|\/+$/g,'')}/${Date.now()}-${crypto.randomBytes(10).toString('hex')}.${ext}`;
+  await client().send(new PutObjectCommand({Bucket:process.env.R2_BUCKET,Key:key,Body:stream,ContentLength:size,ContentType:mime,CacheControl:'public, max-age=31536000, immutable',ContentDisposition:'inline'}));
+  return {key,url:publicUrl(key),thumbKey:'',thumbUrl:'',width:0,height:0,type:mime.startsWith('video/')?'video':'image'};
+}
+
 async function uploadFile(file,prefix='media',options={}){
   if(!file?.buffer)throw new Error('Fayl topilmadi.');
   const detected=await sniff(file.buffer);if(!compatible(file.mimetype,detected))throw new Error('Fayl turi xavfsizlik tekshiruvidan o‘tmadi.');
@@ -45,4 +59,4 @@ async function uploadImage(file,prefix='posts',options={}){return uploadFile(fil
 async function deleteImage(key){if(!key||!configured())return;await client().send(new DeleteObjectCommand({Bucket:process.env.R2_BUCKET,Key:key})).catch(()=>{})}
 async function deleteMany(keys=[]){await Promise.all([...new Set(keys.filter(Boolean))].map(deleteImage))}
 async function listPrefix(prefix,maxKeys=1000){if(!configured())return [];const out=[];let token;do{const r=await client().send(new ListObjectsV2Command({Bucket:process.env.R2_BUCKET,Prefix:prefix,MaxKeys:Math.min(1000,maxKeys-out.length),ContinuationToken:token}));out.push(...(r.Contents||[]));token=r.IsTruncated?r.NextContinuationToken:null}while(token&&out.length<maxKeys);return out}
-module.exports={uploadImage,uploadFile,deleteImage,deleteMany,listPrefix,configured};
+module.exports={uploadImage,uploadFile,uploadStream,deleteImage,deleteMany,listPrefix,configured,publicUrl};
