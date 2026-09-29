@@ -1,0 +1,60 @@
+<%- include('../partials/head') %><%- include('../partials/topbar') %>
+<main class="content admin-page-v15">
+  <div class="admin-hero">
+    <div><span class="settings-kicker">MANAGED NETWORK</span><h1>Virtual profillar</h1><p>Platforma boshqaradigan, ochiq belgilangan virtual profillar. Ularning faolligi real auditoriya statistikasi va rankingdan alohida yuritiladi.</p></div>
+    <div class="admin-hero-actions"><a class="btn ghost" href="/admin"><i data-lucide="arrow-left"></i> Admin</a></div>
+  </div>
+  <%if(ok){%><div class="alert" style="background:#ecfff4;color:#16733e;border-color:#bdebd0"><%=ok%></div><%}%>
+  <%if(error){%><div class="alert"><%=error%></div><%}%>
+
+  <section class="admin-stat-grid">
+    <% const cards=[
+      ['users','Virtual profil','syntheticUsers','managedByPlatform'],
+      ['user-check','Real user','organicUsers','organic'],
+      ['user-plus','Virtual follow','syntheticFollows','real countga kirmaydi'],
+      ['heart','Virtual like','syntheticLikes','rankingga kirmaydi'],
+      ['message-circle','Virtual comment','syntheticComments','virtual kontent uchun']
+    ]; %>
+    <%cards.forEach(c=>{%><article class="admin-stat"><span class="admin-stat-icon"><i data-lucide="<%=c[0]%>"></i></span><div><small><%=c[1]%></small><b><%=Number(stats[c[2]]||0).toLocaleString('uz-UZ')%></b><em><%=c[3]%></em></div></article><%})%>
+  </section>
+
+  <div class="admin-two-col">
+    <section class="admin-panel card">
+      <div class="admin-panel-head"><div><span class="settings-kicker">CREATE</span><h2>Birdaniga virtual profil yaratish</h2></div></div>
+      <form class="admin-announce" method="post" action="/admin/managed/seed">
+        <p class="muted">1–10 000 oralig‘ida. Qayta bosilsa mavjud username’lar dublikat bo‘lmaydi.</p>
+        <div><input type="number" name="count" min="1" max="10000" value="10000" required><button class="btn primary"><i data-lucide="users-round"></i> Yaratish</button></div>
+      </form>
+    </section>
+    <section class="admin-panel card">
+      <div class="admin-panel-head"><div><span class="settings-kicker">ACTIVITY PULSE</span><h2>Qisman faollik</h2></div></div>
+      <form class="admin-announce" method="post" action="/admin/managed/pulse">
+        <p class="muted">Bir pulse’da 1–500 managed profil follow/like qiladi; comment faqat virtual postlarga yoziladi. Real user statistikasi oshirilmaydi.</p>
+        <div><input type="number" name="actors" min="1" max="500" value="150" required><button class="btn primary"><i data-lucide="activity"></i> Pulse</button></div>
+      </form>
+    </section>
+  </div>
+
+  <section class="admin-panel card">
+    <div class="admin-panel-head"><div><span class="settings-kicker">POST AS MANAGED PROFILE</span><h2>Virtual profil nomidan post</h2></div></div>
+    <form class="admin-announce" method="post" action="/admin/managed/post">
+      <input name="username" placeholder="lumi00001.aziza" required>
+      <textarea name="caption" maxlength="2200" placeholder="Caption..."></textarea>
+      <input name="imageUrl" placeholder="https://... rasm URL yoki /icons/icon-512.png">
+      <div><button class="btn primary"><i data-lucide="send"></i> Post joylash</button></div>
+    </form>
+  </section>
+
+  <section class="admin-panel card admin-users-panel">
+    <div class="admin-panel-head"><div><span class="settings-kicker">RECENT MANAGED</span><h2>Oxirgi virtual profillar</h2></div><b class="admin-count"><%=recentManaged.length%></b></div>
+    <div class="admin-user-table">
+      <%recentManaged.forEach(u=>{%>
+        <article class="admin-user-row">
+          <a class="admin-user-ident" href="/u/<%=u.username%>"><span class="avatar"><%if(u.avatarUrl){%><img src="<%=u.avatarUrl%>"><%}else{%><b><%=u.name[0]%></b><%}%></span><span><strong><%=u.name%></strong><small>@<%=u.username%> · Virtual profile</small></span></a>
+          <div class="admin-user-badges"><span>managed</span><span class="ok"><%=u.creatorMode?'creator':'user'%></span></div>
+        </article>
+      <%})%>
+    </div>
+  </section>
+</main>
+<%- include('../partials/footer') %>

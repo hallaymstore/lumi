@@ -1,6 +1,6 @@
 const router=require('express').Router();const mongoose=require('mongoose');const multer=require('multer');
-const User=require('../models/User');const Post=require('../models/Post');const Story=require('../models/Story');const Comment=require('../models/Comment');const Message=require('../models/Message');const Conversation=require('../models/Conversation');const Notification=require('../models/Notification');const AdminLog=require('../models/AdminLog');const Report=require('../models/Report');const FeedEvent=require('../models/FeedEvent');const Follow=require('../models/Follow');const AdCampaign=require('../models/AdCampaign');const AdEvent=require('../models/AdEvent');const AdConfig=require('../models/AdConfig');const NetworkAdEvent=require('../models/NetworkAdEvent');
-const {emitToUsers}=require('../services/realtime');const {requireAuth,requireAdmin}=require('../middleware/auth');const {uploadFile,deleteMany}=require('../services/r2');const {getAdConfig}=require('../services/ads');
+const User=require('../models/User');const Post=require('../models/Post');const PostLike=require('../models/PostLike');const Story=require('../models/Story');const Comment=require('../models/Comment');const Message=require('../models/Message');const Conversation=require('../models/Conversation');const Notification=require('../models/Notification');const AdminLog=require('../models/AdminLog');const Report=require('../models/Report');const FeedEvent=require('../models/FeedEvent');const Follow=require('../models/Follow');const AdCampaign=require('../models/AdCampaign');const AdEvent=require('../models/AdEvent');const AdConfig=require('../models/AdConfig');const NetworkAdEvent=require('../models/NetworkAdEvent');
+const {emitToUsers}=require('../services/realtime');const {requireAuth,requireAdmin}=require('../middleware/auth');const {uploadFile,deleteMany}=require('../services/r2');const {getAdConfig}=require('../services/ads');const {seedManagedProfiles,runManagedPulse,createManagedPost}=require('../services/managedProfiles');
 const adUpload=multer({storage:multer.memoryStorage(),limits:{fileSize:10*1024*1024},fileFilter:(_,f,cb)=>cb(null,/^image\/(jpeg|png|webp|avif)$/.test(f.mimetype))});
 function safeRegex(v=''){return String(v).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}
 async function logAction(req,action,targetType='',targetId='',details=''){await AdminLog.create({admin:req.currentUser._id,action,targetType,targetId:String(targetId||''),details:String(details||'').slice(0,240)}).catch(()=>{})}
@@ -15,6 +15,31 @@ router.post('/users/:id/role',requireAuth,requireAdmin,async(req,res)=>{const u=
 router.post('/posts/:id/toggle',requireAuth,requireAdmin,async(req,res)=>{const p=await Post.findById(req.params.id).populate('author','username');if(p){p.isHidden=!p.isHidden;if(p.isHidden)p.reports=0;await p.save();await logAction(req,p.isHidden?'post.hide':'post.show','post',p._id,p.author?`@${p.author.username}`:'')}res.redirect(req.get('referer')||'/admin')});
 router.post('/reports/:id/action',requireAuth,requireAdmin,async(req,res)=>{const r=await Report.findById(req.params.id);if(!r)return res.sendStatus(404);const action=['dismiss','hide_content','warn','suspend_24h','suspend_7d','ban'].includes(req.body.action)?req.body.action:'dismiss';if(action==='hide_content'){if(r.targetType==='post')await Post.findByIdAndUpdate(r.targetId,{isHidden:true});else if(r.targetType==='story')await Story.findByIdAndUpdate(r.targetId,{isHidden:true});else if(r.targetType==='comment')await Comment.findByIdAndUpdate(r.targetId,{isHidden:true});else if(r.targetType==='message')await Message.findByIdAndUpdate(r.targetId,{text:'',deletedForEveryoneAt:new Date()})}if(['suspend_24h','suspend_7d','ban'].includes(action)&&r.reportedUser){const u=await User.findById(r.reportedUser);if(u&&u.role!=='admin'){u.isSuspended=true;u.suspendedUntil=action==='suspend_24h'?new Date(Date.now()+864e5):action==='suspend_7d'?new Date(Date.now()+7*864e5):null;await u.save()}}if(action==='warn'&&r.reportedUser)await Notification.create({user:r.reportedUser,actor:req.currentUser._id,type:'moderation',text:'Kontentingiz bo‘yicha moderator ogohlantirishi mavjud. Qoidalarga rioya qiling.'}).catch(()=>{});r.status=action==='dismiss'?'dismissed':'actioned';r.action=action;r.reviewedBy=req.currentUser._id;r.reviewedAt=new Date();await r.save();await logAction(req,'report.'+action,r.targetType,r.targetId,`report:${r._id}`);res.redirect('/admin#moderation')});
 router.post('/announce',requireAuth,requireAdmin,async(req,res)=>{const text=String(req.body.text||'').trim().slice(0,180),target=['all','creators'].includes(req.body.target)?req.body.target:'all';if(text){const filter={isSuspended:false,_id:{$ne:req.currentUser._id}};if(target==='creators')filter.role='creator';const ids=await User.find(filter).select('_id').lean();for(let i=0;i<ids.length;i+=500)await Notification.insertMany(ids.slice(i,i+500).map(u=>({user:u._id,actor:req.currentUser._id,type:'system',text})),{ordered:false}).catch(()=>{});emitToUsers(ids.map(u=>String(u._id)),'notification',{text,type:'system'});await logAction(req,'system.announce','notification',target,`${ids.length} user · ${text}`)}res.redirect('/admin#announcement')});
+
+router.get('/managed',requireAuth,requireAdmin,async(req,res)=>{
+ const [syntheticUsers,organicUsers,syntheticFollows,syntheticLikes,syntheticComments,recentManaged]=await Promise.all([
+  User.countDocuments({accountOrigin:'synthetic',managedByPlatform:true}),
+  User.countDocuments({accountOrigin:{$ne:'synthetic'}}),
+  Follow.countDocuments({interactionOrigin:'synthetic'}),
+  PostLike.countDocuments({interactionOrigin:'synthetic'}),
+  Comment.countDocuments({interactionOrigin:'synthetic'}),
+  User.find({accountOrigin:'synthetic',managedByPlatform:true}).sort({createdAt:-1}).limit(60).lean()
+ ]);
+ res.set('Cache-Control','no-store');
+ res.render('admin/managed',{title:'Managed profiles',stats:{syntheticUsers,organicUsers,syntheticFollows,syntheticLikes,syntheticComments},recentManaged,ok:String(req.query.ok||''),error:String(req.query.error||'')});
+});
+router.post('/managed/seed',requireAuth,requireAdmin,async(req,res)=>{
+ try{const count=Math.max(1,Math.min(10000,Number(req.body.count)||10000));const result=await seedManagedProfiles(count);await logAction(req,'managed.seed','user','synthetic',JSON.stringify(result));res.redirect('/admin/managed?ok='+encodeURIComponent(result.created+' ta yangi virtual profil yaratildi. Jami: '+result.total));}
+ catch(e){res.redirect('/admin/managed?error='+encodeURIComponent(e.message||'Managed profillar yaratilmadi.'))}
+});
+router.post('/managed/pulse',requireAuth,requireAdmin,async(req,res)=>{
+ try{const actors=Math.max(1,Math.min(500,Number(req.body.actors)||150));const result=await runManagedPulse(actors);await logAction(req,'managed.pulse','activity','synthetic',JSON.stringify(result));res.redirect('/admin/managed?ok='+encodeURIComponent('Pulse: '+result.actors+' profil · '+result.follows+' follow · '+result.likes+' like · '+result.comments+' comment')); }
+ catch(e){res.redirect('/admin/managed?error='+encodeURIComponent(e.message||'Activity pulse bajarilmadi.'))}
+});
+router.post('/managed/post',requireAuth,requireAdmin,async(req,res)=>{
+ try{const post=await createManagedPost({username:req.body.username,caption:req.body.caption,imageUrl:req.body.imageUrl});await logAction(req,'managed.post','post',post._id,'@'+String(req.body.username||''));res.redirect('/admin/managed?ok='+encodeURIComponent('Virtual profil nomidan post joylandi.')); }
+ catch(e){res.redirect('/admin/managed?error='+encodeURIComponent(e.message||'Post joylanmadi.'))}
+});
 
 function adFormValue(req, existing={}) {
   const placementInput=Array.isArray(req.body.placements)?req.body.placements:[req.body.placements].filter(Boolean);
