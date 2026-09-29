@@ -48,12 +48,16 @@ async function seedManagedProfiles(requested=10000){
   const chunks=[];for(let i=0;i<docs.length;i+=2000)chunks.push(docs.slice(i,i+2000));
   const results=await Promise.all(chunks.map(async chunk=>{
     try{
-      const r=await User.collection.insertMany(chunk,{ordered:false});
-      return Number(r.insertedCount||0);
+      const inserted=await User.insertMany(chunk,{ordered:false});
+      return inserted.length;
     }catch(e){
-      const dupes=(e?.writeErrors||[]).filter(x=>x?.err?.code===11000||x?.code===11000).length;
-      const inserted=Number(e?.result?.insertedCount||e?.insertedCount||Math.max(0,chunk.length-dupes));
-      if(dupes===(e?.writeErrors||[]).length)return inserted;
+      const writeErrors=Array.isArray(e?.writeErrors)?e.writeErrors:[];
+      const duplicateOnly=writeErrors.length>0&&writeErrors.every(x=>x?.err?.code===11000||x?.code===11000);
+      if(duplicateOnly){
+        const insertedCount=Number(e?.result?.result?.nInserted||e?.result?.insertedCount||e?.insertedDocs?.length||0);
+        return insertedCount;
+      }
+      console.error('Managed seed batch failed:',e?.message||e);
       throw e;
     }
   }));
