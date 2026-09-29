@@ -4,6 +4,7 @@ const postViewSchema = new mongoose.Schema({
   post: { type: mongoose.Schema.Types.ObjectId, ref: 'Post', required: true, index: true },
   viewerKey: { type: String, required: true },
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  interactionOrigin:{type:String,enum:['organic','synthetic'],default:'organic',index:true},
   viewedAt: { type: Date, default: Date.now, index: true }
 }, { timestamps: true });
 
