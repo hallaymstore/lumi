@@ -31,25 +31,36 @@ function profileFor(i,passwordHash){
     interests:[interests[i%interests.length],interests[(i+5)%interests.length]],
     accountOrigin:'synthetic',managedByPlatform:true,isVerified:false,isSuspended:false,isPrivate:false,
     discoverableByPhone:false,showActivityStatus:false,notifyPush:false,ageConfirmed18:false,
-    postCount:0,followerCount:0,followingCount:0,createdAt,updatedAt:createdAt
+    postCount:0,followerCount:0,followingCount:0,createdAt
   };
 }
 
 async function seedManagedProfiles(requested=10000){
   const count=Math.max(1,Math.min(10000,Number(requested)||10000));
   const passwordHash=await bcrypt.hash(crypto.randomBytes(32).toString('hex'),10);
-  let created=0;
+  let created=0,existing=0;
   for(let start=0;start<count;start+=500){
-    const end=Math.min(count,start+500),ops=[];
-    for(let i=start;i<end;i++){
-      const p=profileFor(i,passwordHash);
-      ops.push({updateOne:{filter:{username:p.username},update:{$setOnInsert:p},upsert:true}});
+    const end=Math.min(count,start+500),docs=[];
+    for(let i=start;i<end;i++)docs.push(profileFor(i,passwordHash));
+    const usernames=docs.map(x=>x.username);
+    const found=await User.find({username:{$in:usernames}}).select('username').lean();
+    const exists=new Set(found.map(x=>String(x.username).toLowerCase()));
+    const missing=docs.filter(x=>!exists.has(String(x.username).toLowerCase()));
+    existing+=docs.length-missing.length;
+    if(missing.length){
+      try{
+        const inserted=await User.insertMany(missing,{ordered:false});
+        created+=inserted.length;
+      }catch(e){
+        if(e?.insertedDocs)created+=e.insertedDocs.length;
+        else if(e?.writeErrors?.every(x=>x?.err?.code===11000||x?.code===11000)){
+          created+=Math.max(0,missing.length-e.writeErrors.length);
+        }else throw e;
+      }
     }
-    const r=await User.bulkWrite(ops,{ordered:false});
-    created+=Number(r.upsertedCount||0);
   }
   const total=await User.countDocuments({accountOrigin:'synthetic',managedByPlatform:true});
-  return {requested:count,created,total};
+  return {requested:count,created,existing,total};
 }
 
 function pick(rows,i,offset=0){return rows.length?rows[(i*17+offset)%rows.length]:null}
