@@ -13,7 +13,8 @@
       ['user-check','Real user','organicUsers','organic'],
       ['user-plus','Virtual follow','syntheticFollows','real countga kirmaydi'],
       ['heart','Virtual like','syntheticLikes','rankingga kirmaydi'],
-      ['message-circle','Virtual comment','syntheticComments','virtual kontent uchun']
+      ['message-circle','Virtual comment','syntheticComments','virtual kontent uchun'],
+      ['eye','Virtual view','syntheticViews','real view countga kirmaydi']
     ]; %>
     <%cards.forEach(c=>{%><article class="admin-stat"><span class="admin-stat-icon"><i data-lucide="<%=c[0]%>"></i></span><div><small><%=c[1]%></small><b><%=Number(stats[c[2]]||0).toLocaleString('uz-UZ')%></b><em><%=c[3]%></em></div></article><%})%>
   </section>
@@ -36,6 +37,38 @@
     </section>
   </div>
 
+
+  <section class="admin-panel card managed-task-center">
+    <div class="admin-panel-head"><div><span class="settings-kicker">TASK CENTER</span><h2>Managed userlarga vazifa berish</h2></div></div>
+    <form class="admin-announce managed-task-form" method="post" action="/admin/managed/task">
+      <div class="managed-task-grid">
+        <label><small>Vazifa</small><select name="type" required>
+          <option value="view">VIEW</option><option value="like">LIKE</option><option value="follow">FOLLOW</option><option value="comment">COMMENT</option>
+        </select></label>
+        <label><small>Miqdor</small><input type="number" name="amount" min="1" max="5000" value="100" required></label>
+        <label><small>Target @username (FOLLOW)</small><input name="targetUsername" placeholder="@hallaym yoki bo‘sh = random"></label>
+        <label><small>Target post ID (LIKE / VIEW / COMMENT)</small><input name="postId" placeholder="bo‘sh = random"></label>
+      </div>
+      <label><small>Comment matni (ixtiyoriy)</small><input name="commentText" maxlength="400" placeholder="bo‘sh bo‘lsa random qisqa comment"></label>
+      <p class="muted">COMMENT faqat virtual postlarga beriladi. LIKE / FOLLOW / VIEW real profillarga ham berilishi mumkin, lekin real public statistikaga qo‘shilmaydi.</p>
+      <button class="btn primary full"><i data-lucide="play"></i> Vazifani bajarish</button>
+    </form>
+  </section>
+
+  <section class="admin-panel card">
+    <div class="admin-panel-head"><div><span class="settings-kicker">TASK HISTORY</span><h2>Oxirgi vazifalar</h2></div><b class="admin-count"><%=recentTasks.length%></b></div>
+    <div class="managed-task-history">
+      <%if(!recentTasks.length){%><p class="muted">Hali vazifa bajarilmagan.</p><%}%>
+      <%recentTasks.forEach(t=>{%>
+        <article class="managed-task-row">
+          <span class="managed-task-type"><i data-lucide="<%=t.type==='like'?'heart':t.type==='comment'?'message-circle':t.type==='follow'?'user-plus':'eye'%>"></i><b><%=String(t.type).toUpperCase()%></b></span>
+          <span><strong><%=t.result?.completed||0%>/<%=t.amount%></strong><small><%=t.status%> · skip <%=t.result?.skipped||0%></small></span>
+          <time><%=new Date(t.createdAt).toLocaleString('uz-UZ')%></time>
+        </article>
+      <%})%>
+    </div>
+  </section>
+
   <section class="admin-panel card">
     <div class="admin-panel-head"><div><span class="settings-kicker">POST AS MANAGED PROFILE</span><h2>Virtual profil nomidan post</h2></div></div>
     <form class="admin-announce" method="post" action="/admin/managed/post">
@@ -47,8 +80,12 @@
   </section>
 
   <section class="admin-panel card admin-users-panel">
-    <div class="admin-panel-head"><div><span class="settings-kicker">RECENT MANAGED</span><h2>Oxirgi virtual profillar</h2></div><b class="admin-count"><%=recentManaged.length%></b></div>
-    <div class="admin-user-table">
+    <div class="admin-panel-head"><div><span class="settings-kicker">MANAGED LIST</span><h2>Virtual profillar</h2></div><b class="admin-count"><%=recentManaged.length%></b></div>
+    <form class="admin-filter" method="get" action="/admin/managed">
+      <input name="mq" value="<%=mq||''%>" placeholder="@username yoki ism bo‘yicha qidirish">
+      <button class="btn ghost compact"><i data-lucide="search"></i> Qidirish</button>
+    </form>
+    <div class="admin-user-table managed-user-scroll">
       <%recentManaged.forEach(u=>{%>
         <article class="admin-user-row">
           <a class="admin-user-ident" href="/u/<%=u.username%>"><span class="avatar"><%if(u.avatarUrl){%><img src="<%=u.avatarUrl%>"><%}else{%><b><%=u.name[0]%></b><%}%></span><span><strong><%=u.name%></strong><small>@<%=u.username%> · Virtual profile</small></span></a>

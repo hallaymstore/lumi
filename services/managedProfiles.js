@@ -5,6 +5,8 @@ const Post=require('../models/Post');
 const Follow=require('../models/Follow');
 const PostLike=require('../models/PostLike');
 const Comment=require('../models/Comment');
+const PostView=require('../models/PostView');
+const ManagedTask=require('../models/ManagedTask');
 
 const firstNames=['Aziza','Madina','Mohira','Nilufar','Shahnoza','Sevara','Dilnoza','Malika','Rayona','Zarina','Jasur','Bekzod','Sardor','Asilbek','Shahzod','Diyor','Kamron','Temur','Akmal','Sanjar','Anastasia','Sofia','Alina','Daria','Elena','Mila','Polina','Viktoria','Arina','Ksenia','Alexander','Maksim','Nikita','Roman','Daniil','Kirill','Artem','Ilya','Mikhail','Denis','Amelia','Emma','Olivia','Mia','Ava','Luna','Chloe','Nora','Maya','Layla','Noah','Liam','Ethan','Leo','Lucas','Adam','Owen','Ryan','Mason','Aiden'];
 const lastNames=['Karimova','Rahimova','Ismoilova','Yusupova','Saidova','Nazarova','Tursunova','Abdullaeva','Rasulova','Qodirova','Karimov','Rahimov','Ismoilov','Yusupov','Saidov','Nazarov','Tursunov','Abdullaev','Rasulov','Qodirov','Petrova','Ivanova','Smirnova','Volkova','Sokolova','Kuznetsova','Morozova','Popova','Orlova','Lebedeva','Petrov','Ivanov','Smirnov','Volkov','Sokolov','Kuznetsov','Morozov','Popov','Orlov','Lebedev','Anderson','Miller','Taylor','Wilson','Moore','Martin','Clark','Lewis','Walker','Hall','Young','King','Wright','Scott','Green','Baker','Adams','Nelson','Carter','Mitchell'];
@@ -103,6 +105,84 @@ async function runManagedPulse(requested=150){
   return {actors:managed.length,follows,likes,comments:commentsMade};
 }
 
+async function resolveTaskTargets(type,{targetUsername='',postId='',limit=500}={}){
+  if(type==='follow'){
+    if(targetUsername){const u=await User.findOne({username:String(targetUsername).replace(/^@/,'').toLowerCase(),isSuspended:false,isPrivate:false}).lean();if(!u)throw new Error('Target user topilmadi yoki yopiq.');return [u]}
+    return User.aggregate([{$match:{isSuspended:false,isPrivate:false}},{$sample:{size:Math.min(1000,Math.max(20,limit*2))}}]);
+  }
+  if(postId){
+    const p=await Post.findOne({_id:postId,isHidden:false,status:'published'}).lean().catch(()=>null);if(!p)throw new Error('Target post topilmadi.');return [p];
+  }
+  const match={isHidden:false,status:'published'};
+  if(type==='comment'){
+    return Post.aggregate([
+      {$match:match},
+      {$lookup:{from:'users',localField:'author',foreignField:'_id',as:'authorDoc'}},
+      {$unwind:'$authorDoc'},
+      {$match:{'authorDoc.accountOrigin':'synthetic','authorDoc.isSuspended':false}},
+      {$sample:{size:Math.min(1000,Math.max(20,limit*2))}}
+    ]);
+  }
+  return Post.aggregate([{$match:match},{$sample:{size:Math.min(1000,Math.max(20,limit*2))}}]);
+}
+
+async function runManagedTask({type,amount=100,targetUsername='',postId='',commentText='',requestedBy=null}){
+  if(!['like','comment','follow','view'].includes(type))throw new Error('Task turi noto‘g‘ri.');
+  const max=type==='view'?5000:1000;
+  const requested=Math.max(1,Math.min(max,Number(amount)||100));
+  const task=await ManagedTask.create({type,amount:requested,targetUsername:String(targetUsername||'').replace(/^@/,''),targetPost:postId||null,status:'running',requestedBy,startedAt:new Date()});
+  try{
+    const [actors,targets]=await Promise.all([
+      User.aggregate([{$match:{accountOrigin:'synthetic',managedByPlatform:true,isSuspended:false}},{$sample:{size:requested}}]),
+      resolveTaskTargets(type,{targetUsername,postId,limit:requested})
+    ]);
+    if(!actors.length)throw new Error('Managed profillar topilmadi.');
+    if(!targets.length)throw new Error('Task uchun target topilmadi.');
+    const postTargets=type==='follow'?[]:targets;
+    let authorsById=new Map();
+    if(postTargets.length){
+      const ids=[...new Set(postTargets.map(p=>String(p.author)).filter(Boolean))];
+      const authors=await User.find({_id:{$in:ids}}).select('_id accountOrigin isPrivate').lean();
+      authorsById=new Map(authors.map(a=>[String(a._id),a]));
+    }
+    let completed=0,skipped=0;
+    for(let start=0;start<actors.length;start+=50){
+      const batch=actors.slice(start,start+50);
+      await Promise.all(batch.map(async(actor,offset)=>{
+        const i=start+offset;
+        if(type==='follow'){
+          let target=targets[i%targets.length];
+          if(!target||String(target._id)===String(actor._id)){skipped++;return}
+          const r=await Follow.updateOne({follower:actor._id,following:target._id},{$setOnInsert:{follower:actor._id,following:target._id,status:'accepted',interactionOrigin:'synthetic'}},{upsert:true});
+          if(r.upsertedCount)completed++;else skipped++;
+          return;
+        }
+        const post=postTargets[i%postTargets.length];
+        if(!post){skipped++;return}
+        const author=authorsById.get(String(post.author));
+        if(!author||author.isPrivate||String(post.author)===String(actor._id)){skipped++;return}
+        if(type==='like'){
+          const r=await PostLike.updateOne({post:post._id,user:actor._id},{$setOnInsert:{post:post._id,user:actor._id,interactionOrigin:'synthetic'}},{upsert:true});
+          if(r.upsertedCount){completed++;if(author.accountOrigin==='synthetic')await Post.updateOne({_id:post._id},{$inc:{syntheticLikeCount:1}})}else skipped++;
+        }else if(type==='comment'){
+          if(author.accountOrigin!=='synthetic'){skipped++;return}
+          const text=String(commentText||comments[i%comments.length]).trim().slice(0,400)||comments[i%comments.length];
+          await Comment.create({post:post._id,user:actor._id,text,interactionOrigin:'synthetic'});
+          await Post.updateOne({_id:post._id},{$inc:{syntheticCommentCount:1}});completed++;
+        }else if(type==='view'){
+          try{
+            await PostView.create({post:post._id,viewerKey:'s:'+actor._id,user:actor._id,interactionOrigin:'synthetic'});
+            if(author.accountOrigin==='synthetic')await Post.updateOne({_id:post._id},{$inc:{syntheticViewCount:1}});
+            completed++;
+          }catch(e){if(e?.code===11000)skipped++;else throw e}
+        }
+      }));
+    }
+    const result={attempted:actors.length,completed,skipped,note:type==='comment'?'Comment faqat virtual postlarga beriladi.':'Synthetic activity real statistikadan alohida.'};
+    task.status='done';task.result=result;task.finishedAt=new Date();await task.save();return {...result,taskId:task._id};
+  }catch(e){task.status='failed';task.error=String(e.message||e).slice(0,500);task.finishedAt=new Date();await task.save();throw e}
+}
+
 async function createManagedPost({username,caption,imageUrl}){
   const author=await User.findOne({username:String(username||'').toLowerCase(),accountOrigin:'synthetic',managedByPlatform:true});
   if(!author)throw new Error('Managed virtual profil topilmadi.');
@@ -114,4 +194,4 @@ async function createManagedPost({username,caption,imageUrl}){
   return post;
 }
 
-module.exports={seedManagedProfiles,runManagedPulse,createManagedPost};
+module.exports={seedManagedProfiles,runManagedPulse,runManagedTask,createManagedPost};
