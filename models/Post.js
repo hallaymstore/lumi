@@ -37,6 +37,7 @@ const postSchema = new mongoose.Schema({
   saveCount:{type:Number,default:0,min:0},
   shareCount:{type:Number,default:0,min:0},
   viewCount:{type:Number,default:0,min:0,index:true},
+  syntheticViewCount:{type:Number,default:0,min:0},
   qualityScore:{type:Number,default:0,index:true},
   isPinned:{type:Boolean,default:false},
   isHidden:{type:Boolean,default:false,index:true},
