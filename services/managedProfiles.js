@@ -14,53 +14,52 @@ const comments=['Zo‘r chiqibdi ✦','Yaxshi post ekan.','Chiroyli kadr.','Qizi
 
 function slug(v){return String(v).toLowerCase().replace(/[^a-z0-9]+/g,'').slice(0,7)||'user'}
 function pad(n){return String(n).padStart(5,'0')}
-function profileFor(i,passwordHash){
-  const combo=firstNames.length*lastNames.length;
-  const group=Math.floor(i/combo);
-  const first=firstNames[i%firstNames.length];
-  const last=lastNames[Math.floor(i/firstNames.length)%lastNames.length];
-  const second=group>0?firstNames[(i+group*19)%firstNames.length]:'';
-  const creator=i%7===0;
-  const createdAt=new Date(Date.now()-180*864e5+(180*864e5*((i+1)/10001)));
+function rand(n){return Math.floor(Math.random()*n)}
+function profileFor(seq,passwordHash){
+  const first=firstNames[rand(firstNames.length)];
+  const last=lastNames[rand(lastNames.length)];
+  const useMiddle=Math.random()<.16;
+  const middle=useMiddle?firstNames[rand(firstNames.length)]:'';
+  const creator=Math.random()<.14;
+  const createdAt=new Date(Date.now()-rand(180*864e5));
+  const token=crypto.randomBytes(2).toString('hex');
+  const username=('lumi'+seq.toString(36)+'.'+slug(first)+token).slice(0,24);
+  const a=interests[rand(interests.length)],b=interests[rand(interests.length)];
   return {
-    name:second&&second!==first?first+' '+second+' '+last:first+' '+last,
-    username:('lumi'+pad(i+1)+'.'+slug(first)).slice(0,24),
-    passwordHash,bio:bios[i%bios.length],role:creator?'creator':'user',creatorMode:creator,
-    creatorCategory:creator?['lifestyle','tech','gaming','music','travel','art'][i%6]:'',
+    name:middle&&middle!==first?first+' '+middle+' '+last:first+' '+last,
+    username,passwordHash,bio:bios[rand(bios.length)],role:creator?'creator':'user',creatorMode:creator,
+    creatorCategory:creator?['lifestyle','tech','gaming','music','travel','art'][rand(6)]:'',
     creatorSince:creator?createdAt:null,
-    interests:[interests[i%interests.length],interests[(i+5)%interests.length]],
+    interests:a===b?[a]:[a,b],
     accountOrigin:'synthetic',managedByPlatform:true,isVerified:false,isSuspended:false,isPrivate:false,
-    discoverableByPhone:false,showActivityStatus:false,notifyPush:false,ageConfirmed18:false,
-    postCount:0,followerCount:0,followingCount:0,createdAt
+    discoverableByPhone:false,showActivityStatus:false,notifyLikes:false,notifyComments:false,notifyFollows:false,notifyMessages:false,notifyPush:false,ageConfirmed18:false,
+    allowMessages:'following',allowStoryReplies:true,allowMentions:'everyone',dataSaver:true,
+    postCount:0,followerCount:0,followingCount:0,createdAt,updatedAt:createdAt
   };
 }
 
 async function seedManagedProfiles(requested=10000){
-  const count=Math.max(1,Math.min(10000,Number(requested)||10000));
-  const passwordHash=await bcrypt.hash(crypto.randomBytes(32).toString('hex'),10);
-  let created=0,existing=0;
-  for(let start=0;start<count;start+=500){
-    const end=Math.min(count,start+500),docs=[];
-    for(let i=start;i<end;i++)docs.push(profileFor(i,passwordHash));
-    const usernames=docs.map(x=>x.username);
-    const found=await User.find({username:{$in:usernames}}).select('username').lean();
-    const exists=new Set(found.map(x=>String(x.username).toLowerCase()));
-    const missing=docs.filter(x=>!exists.has(String(x.username).toLowerCase()));
-    existing+=docs.length-missing.length;
-    if(missing.length){
-      try{
-        const inserted=await User.insertMany(missing,{ordered:false});
-        created+=inserted.length;
-      }catch(e){
-        if(e?.insertedDocs)created+=e.insertedDocs.length;
-        else if(e?.writeErrors?.every(x=>x?.err?.code===11000||x?.code===11000)){
-          created+=Math.max(0,missing.length-e.writeErrors.length);
-        }else throw e;
-      }
+  const target=Math.max(1,Math.min(10000,Number(requested)||10000));
+  const existing=await User.countDocuments({accountOrigin:'synthetic',managedByPlatform:true});
+  const need=Math.max(0,target-existing);
+  if(!need)return {requested:target,created:0,existing,total:existing};
+  const passwordHash=await bcrypt.hash(crypto.randomBytes(32).toString('hex'),8);
+  const docs=Array.from({length:need},(_,i)=>profileFor(existing+i+1,passwordHash));
+  const chunks=[];for(let i=0;i<docs.length;i+=2000)chunks.push(docs.slice(i,i+2000));
+  const results=await Promise.all(chunks.map(async chunk=>{
+    try{
+      const r=await User.collection.insertMany(chunk,{ordered:false});
+      return Number(r.insertedCount||0);
+    }catch(e){
+      const dupes=(e?.writeErrors||[]).filter(x=>x?.err?.code===11000||x?.code===11000).length;
+      const inserted=Number(e?.result?.insertedCount||e?.insertedCount||Math.max(0,chunk.length-dupes));
+      if(dupes===(e?.writeErrors||[]).length)return inserted;
+      throw e;
     }
-  }
+  }));
+  const created=results.reduce((a,b)=>a+b,0);
   const total=await User.countDocuments({accountOrigin:'synthetic',managedByPlatform:true});
-  return {requested:count,created,existing,total};
+  return {requested:target,created,existing,total};
 }
 
 function pick(rows,i,offset=0){return rows.length?rows[(i*17+offset)%rows.length]:null}
