@@ -80,7 +80,11 @@
   </section>
 
   <section class="admin-panel card admin-users-panel">
-    <div class="admin-panel-head"><div><span class="settings-kicker">RECENT MANAGED</span><h2>Oxirgi virtual profillar</h2></div><b class="admin-count"><%=recentManaged.length%></b></div>
+    <div class="admin-panel-head"><div><span class="settings-kicker">MANAGED LIST</span><h2>Virtual profillar</h2></div><b class="admin-count"><%=recentManaged.length%></b></div>
+    <form class="admin-filter" method="get" action="/admin/managed">
+      <input name="mq" value="<%=mq||''%>" placeholder="@username yoki ism bo‘yicha qidirish">
+      <button class="btn ghost compact"><i data-lucide="search"></i> Qidirish</button>
+    </form>
     <div class="admin-user-table managed-user-scroll">
       <%recentManaged.forEach(u=>{%>
         <article class="admin-user-row">
