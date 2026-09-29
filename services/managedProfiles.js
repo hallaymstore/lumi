@@ -27,7 +27,7 @@ function profileFor(seq,passwordHash){
   const a=interests[rand(interests.length)],b=interests[rand(interests.length)];
   return {
     name:middle&&middle!==first?first+' '+middle+' '+last:first+' '+last,
-    username,passwordHash,bio:bios[rand(bios.length)],role:creator?'creator':'user',creatorMode:creator,
+    username,phone:`managed-${seq}-${token}`,email:`managed+${seq}-${token}@synthetic.invalid`,passwordHash,bio:bios[rand(bios.length)],role:creator?'creator':'user',creatorMode:creator,
     creatorCategory:creator?['lifestyle','tech','gaming','music','travel','art'][rand(6)]:'',
     creatorSince:creator?createdAt:null,
     interests:a===b?[a]:[a,b],
