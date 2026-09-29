@@ -114,6 +114,15 @@ async function resolveTaskTargets(type,{targetUsername='',postId='',limit=500}={
     const p=await Post.findOne({_id:postId,isHidden:false,status:'published'}).lean().catch(()=>null);if(!p)throw new Error('Target post topilmadi.');return [p];
   }
   const match={isHidden:false,status:'published'};
+  if(type==='comment'){
+    return Post.aggregate([
+      {$match:match},
+      {$lookup:{from:'users',localField:'author',foreignField:'_id',as:'authorDoc'}},
+      {$unwind:'$authorDoc'},
+      {$match:{'authorDoc.accountOrigin':'synthetic','authorDoc.isSuspended':false}},
+      {$sample:{size:Math.min(1000,Math.max(20,limit*2))}}
+    ]);
+  }
   return Post.aggregate([{$match:match},{$sample:{size:Math.min(1000,Math.max(20,limit*2))}}]);
 }
 
