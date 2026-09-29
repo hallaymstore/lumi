@@ -137,34 +137,37 @@ async function runManagedTask({type,amount=100,targetUsername='',postId='',comme
       authorsById=new Map(authors.map(a=>[String(a._id),a]));
     }
     let completed=0,skipped=0;
-    for(let i=0;i<actors.length;i++){
-      const actor=actors[i];
-      if(type==='follow'){
-        let target=targets[i%targets.length];
-        if(!target||String(target._id)===String(actor._id)){skipped++;continue}
-        const r=await Follow.updateOne({follower:actor._id,following:target._id},{$setOnInsert:{follower:actor._id,following:target._id,status:'accepted',interactionOrigin:'synthetic'}},{upsert:true});
-        if(r.upsertedCount)completed++;else skipped++;
-        continue;
-      }
-      let post=postTargets[i%postTargets.length];
-      if(!post){skipped++;continue}
-      const author=authorsById.get(String(post.author));
-      if(!author||author.isPrivate||String(post.author)===String(actor._id)){skipped++;continue}
-      if(type==='like'){
-        const r=await PostLike.updateOne({post:post._id,user:actor._id},{$setOnInsert:{post:post._id,user:actor._id,interactionOrigin:'synthetic'}},{upsert:true});
-        if(r.upsertedCount){completed++;if(author.accountOrigin==='synthetic')await Post.updateOne({_id:post._id},{$inc:{syntheticLikeCount:1}})}else skipped++;
-      }else if(type==='comment'){
-        if(author.accountOrigin!=='synthetic'){skipped++;continue}
-        const text=String(commentText||comments[i%comments.length]).trim().slice(0,400)||comments[i%comments.length];
-        await Comment.create({post:post._id,user:actor._id,text,interactionOrigin:'synthetic'});
-        await Post.updateOne({_id:post._id},{$inc:{syntheticCommentCount:1}});completed++;
-      }else if(type==='view'){
-        try{
-          await PostView.create({post:post._id,viewerKey:'s:'+actor._id,user:actor._id,interactionOrigin:'synthetic'});
-          if(author.accountOrigin==='synthetic')await Post.updateOne({_id:post._id},{$inc:{syntheticViewCount:1}});
-          completed++;
-        }catch(e){if(e?.code===11000)skipped++;else throw e}
-      }
+    for(let start=0;start<actors.length;start+=50){
+      const batch=actors.slice(start,start+50);
+      await Promise.all(batch.map(async(actor,offset)=>{
+        const i=start+offset;
+        if(type==='follow'){
+          let target=targets[i%targets.length];
+          if(!target||String(target._id)===String(actor._id)){skipped++;return}
+          const r=await Follow.updateOne({follower:actor._id,following:target._id},{$setOnInsert:{follower:actor._id,following:target._id,status:'accepted',interactionOrigin:'synthetic'}},{upsert:true});
+          if(r.upsertedCount)completed++;else skipped++;
+          return;
+        }
+        const post=postTargets[i%postTargets.length];
+        if(!post){skipped++;return}
+        const author=authorsById.get(String(post.author));
+        if(!author||author.isPrivate||String(post.author)===String(actor._id)){skipped++;return}
+        if(type==='like'){
+          const r=await PostLike.updateOne({post:post._id,user:actor._id},{$setOnInsert:{post:post._id,user:actor._id,interactionOrigin:'synthetic'}},{upsert:true});
+          if(r.upsertedCount){completed++;if(author.accountOrigin==='synthetic')await Post.updateOne({_id:post._id},{$inc:{syntheticLikeCount:1}})}else skipped++;
+        }else if(type==='comment'){
+          if(author.accountOrigin!=='synthetic'){skipped++;return}
+          const text=String(commentText||comments[i%comments.length]).trim().slice(0,400)||comments[i%comments.length];
+          await Comment.create({post:post._id,user:actor._id,text,interactionOrigin:'synthetic'});
+          await Post.updateOne({_id:post._id},{$inc:{syntheticCommentCount:1}});completed++;
+        }else if(type==='view'){
+          try{
+            await PostView.create({post:post._id,viewerKey:'s:'+actor._id,user:actor._id,interactionOrigin:'synthetic'});
+            if(author.accountOrigin==='synthetic')await Post.updateOne({_id:post._id},{$inc:{syntheticViewCount:1}});
+            completed++;
+          }catch(e){if(e?.code===11000)skipped++;else throw e}
+        }
+      }));
     }
     const result={attempted:actors.length,completed,skipped,note:type==='comment'?'Comment faqat virtual postlarga beriladi.':'Synthetic activity real statistikadan alohida.'};
     task.status='done';task.result=result;task.finishedAt=new Date();await task.save();return {...result,taskId:task._id};
