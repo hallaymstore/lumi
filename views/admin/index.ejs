@@ -10,7 +10,7 @@
     <article class="health-card"><i data-lucide="globe-2"></i><div><b>Public URL</b><small><%=system.siteUrl%></small></div></article>
   </section>
   <section class="admin-stat-grid">
-    <% const cards=[['users','Jami user','users',`${stats.newToday} bugun · ${stats.newWeek} 7 kunda`],['image','Postlar','posts',`${stats.postsToday} bugun · ${stats.hiddenPosts} yashirin`],['eye','Ko‘rishlar','views','unique user + guest'],['heart','Like','likes',`${stats.comments} comment`],['bookmark','Save','saves',`${stats.shares} ulashish`],['circle-play','Active story','activeStories','24 soat ichida'],['messages-square','Xabarlar','messages',`${stats.conversations} suhbat`],['flag','Moderatsiya','reportsOpen',`${stats.suspendedUsers} suspended`]]; %>
+    <% const cards=[['users','Jami profil','users',`${stats.organicUsers||0} real · ${stats.syntheticUsers||0} virtual`],['image','Postlar','posts',`${stats.postsToday} bugun · ${stats.hiddenPosts} yashirin`],['eye','Ko‘rishlar','views','unique user + guest'],['heart','Like','likes',`${stats.comments} comment`],['bookmark','Save','saves',`${stats.shares} ulashish`],['circle-play','Active story','activeStories','24 soat ichida'],['messages-square','Xabarlar','messages',`${stats.conversations} suhbat`],['flag','Moderatsiya','reportsOpen',`${stats.suspendedUsers} suspended`]]; %>
     <% cards.forEach(c=>{ %><article class="admin-stat"><span class="admin-stat-icon"><i data-lucide="<%=c[0]%>"></i></span><div><small><%=c[1]%></small><b><%=Number(stats[c[2]]||0).toLocaleString('uz-UZ')%></b><em><%=c[3]%></em></div></article><% }) %>
   </section>
   <div class="admin-two-col" id="moderation">

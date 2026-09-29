@@ -52,28 +52,28 @@ async function userSignals(userId){
 async function hydrateAuthors(mixed){
   const missing=mixed.filter(p=>!p.author||typeof p.author==='string'||p.author instanceof mongoose.Types.ObjectId).map(p=>p._id);
   if(!missing.length)return mixed;
-  const filled=await Post.find({_id:{$in:missing}}).populate('author','name username avatarUrl isVerified followerCount isPrivate').lean();
+  const filled=await Post.find({_id:{$in:missing}}).populate('author','name username avatarUrl isVerified followerCount isPrivate accountOrigin').lean();
   const fm=new Map(filled.map(x=>[String(x._id),x]));
   return mixed.map(x=>fm.get(String(x._id))||x);
 }
 
 async function candidatePools(me,mode='foryou',sig=null){
   const base={isHidden:false},now=Date.now();sig=sig||await userSignals(me?._id);
-  if(mode==='new')return Post.find(base).sort({createdAt:-1}).limit(220).populate('author','name username avatarUrl isVerified followerCount isPrivate').lean();
-  if(mode==='following'&&me){if(!sig.following.size)return [];return Post.find({...base,author:{$in:[...sig.following]}}).sort({createdAt:-1}).limit(260).populate('author','name username avatarUrl isVerified followerCount isPrivate').lean()}
+  if(mode==='new')return Post.find(base).sort({createdAt:-1}).limit(220).populate('author','name username avatarUrl isVerified followerCount isPrivate accountOrigin').lean();
+  if(mode==='following'&&me){if(!sig.following.size)return [];return Post.find({...base,author:{$in:[...sig.following]}}).sort({createdAt:-1}).limit(260).populate('author','name username avatarUrl isVerified followerCount isPrivate accountOrigin').lean()}
 
   const recentCut=new Date(now-14*864e5),trendCut=new Date(now-90*864e5),followingIds=me?[...sig.following]:[];
   const jobs=[
     // Fresh pool: gives new creators a chance.
-    Post.find({...base,createdAt:{$gte:recentCut}}).sort({createdAt:-1}).limit(130).populate('author','name username avatarUrl isVerified followerCount isPrivate').lean(),
+    Post.find({...base,createdAt:{$gte:recentCut}}).sort({createdAt:-1}).limit(130).populate('author','name username avatarUrl isVerified followerCount isPrivate accountOrigin').lean(),
     // Trending pool: engagement quality from the last ~3 months.
-    Post.find({...base,createdAt:{$gte:trendCut}}).sort({qualityScore:-1,saveCount:-1,shareCount:-1,viewCount:-1}).limit(150).populate('author','name username avatarUrl isVerified followerCount isPrivate').lean(),
+    Post.find({...base,createdAt:{$gte:trendCut}}).sort({qualityScore:-1,saveCount:-1,shareCount:-1,viewCount:-1}).limit(150).populate('author','name username avatarUrl isVerified followerCount isPrivate accountOrigin').lean(),
     // Evergreen pool: intentionally all-time so Feed is not just “last posts”.
-    Post.find(base).sort({qualityScore:-1,saveCount:-1,shareCount:-1,viewCount:-1}).limit(130).populate('author','name username avatarUrl isVerified followerCount isPrivate').lean(),
+    Post.find(base).sort({qualityScore:-1,saveCount:-1,shareCount:-1,viewCount:-1}).limit(130).populate('author','name username avatarUrl isVerified followerCount isPrivate accountOrigin').lean(),
     // Discovery pool: random all-time sample lets older/low-exposure content resurface.
     Post.aggregate([{$match:base},{$sample:{size:130}}])
   ];
-  if(followingIds.length)jobs.push(Post.find({...base,author:{$in:followingIds}}).sort({createdAt:-1}).limit(120).populate('author','name username avatarUrl isVerified followerCount isPrivate').lean());
+  if(followingIds.length)jobs.push(Post.find({...base,author:{$in:followingIds}}).sort({createdAt:-1}).limit(120).populate('author','name username avatarUrl isVerified followerCount isPrivate accountOrigin').lean());
   const rows=await Promise.all(jobs);return hydrateAuthors(uniqById(rows.flat()));
 }
 

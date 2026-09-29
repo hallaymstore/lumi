@@ -1,0 +1,109 @@
+/* Lumi mobile hardening — loaded last so it wins over legacy v1.x layers */
+html,body{max-width:100%;overflow-x:hidden}
+img,video,canvas,svg{max-width:100%}
+.content,.landing,.feed-layout,.feed-column,.profile-page,.admin-page-v15,.ad-admin-page,.ad-form-page{min-width:0}
+.post-card,.card,.profile-main,.user-line,.user-line>span:last-child,.admin-panel,.admin-user-ident,.admin-user-ident>span:last-child{min-width:0}
+
+@media(max-width:900px){
+  .content,.landing{width:100%;max-width:760px}
+  .feed-layout,.admin-two-col,.ad-admin-layout,.post-detail-grid{grid-template-columns:minmax(0,1fr)!important}
+  .desktop-side,.post-detail-side{display:none!important}
+  .admin-health-grid,.admin-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .admin-user-row{grid-template-columns:minmax(0,1fr)!important}
+  .admin-user-badges,.admin-user-row .admin-actions{grid-column:1!important;grid-row:auto!important}
+}
+
+@media(max-width:600px){
+  html,body{width:100%;min-width:0;overscroll-behavior-x:none}
+  .app-shell{width:100%;min-width:0;padding-bottom:84px!important}
+  .content,.landing{width:100%!important;max-width:none!important;margin:0!important;padding:12px 10px 88px!important}
+  .topbar{height:58px!important;padding:0 10px!important;gap:6px;min-width:0}
+  .brand{font-size:18px!important;gap:7px;min-width:0}
+  .brand-orb{width:31px;height:31px;border-radius:10px}
+  .top-actions{gap:2px;min-width:0}
+  .top-actions .icon-btn{width:35px;height:35px;border-radius:11px}
+  .top-register-btn{padding:7px 9px!important;font-size:8px!important;white-space:nowrap}
+  .avatar-mini{width:34px;height:34px}
+
+  .feed-layout{display:block!important;width:100%!important}
+  .feed-column{width:100%!important;max-width:100%!important;min-width:0!important}
+  .feed-tabs{top:58px!important;margin:0 0 9px!important;padding:4px!important;border-radius:14px}
+  .feed-tabs a{min-width:0;padding:8px 4px!important;font-size:8px!important}
+  .story-strip,.story-strip-rich{max-width:100%;overflow-x:auto;overflow-y:visible}
+  .story-wrap,.story{flex:0 0 auto}
+  .guest-banner{width:100%;min-width:0}
+
+  .post-card{width:100%!important;max-width:100%!important;margin:0 0 12px!important;border-radius:16px!important;overflow:hidden}
+  .post-head{height:auto!important;min-height:56px;padding:9px 10px!important;gap:8px}
+  .user-line{max-width:calc(100% - 42px);overflow:hidden}
+  .user-line .avatar{flex:0 0 36px;width:36px;height:36px}
+  .user-line>span:last-child{overflow:hidden}
+  .user-line strong,.user-line small{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .post-menu{flex:0 0 auto}
+  .post-carousel,.post-carousel-track,.post-image-wrap,.post-image-link{width:100%!important;max-width:100%!important}
+  .post-carousel{overflow:hidden}
+  .post-image-wrap{max-height:none!important}
+  .post-image{width:100%!important;max-width:100%!important;height:auto!important;max-height:78vh!important;object-fit:contain!important}
+  .post-actions{padding:7px 8px!important}
+  .action-btn{width:36px!important;height:36px!important}
+  .action-btn svg{width:21px!important;height:21px!important}
+  .post-body{padding:0 11px 12px!important;font-size:13px}
+  .post-metrics{gap:8px;flex-wrap:wrap}
+
+  .profile-hero{display:grid!important;grid-template-columns:78px minmax(0,1fr)!important;align-items:start!important;gap:12px!important;padding:8px 0 18px!important}
+  .profile-avatar{grid-column:1;width:78px!important;height:78px!important;min-width:78px!important;padding:3px!important}
+  .profile-main{grid-column:2;min-width:0;width:100%}
+  .profile-main h1{font-size:19px!important;line-height:1.15;flex-wrap:wrap;overflow-wrap:anywhere}
+  .handle,.profile-main>p{max-width:100%;overflow-wrap:anywhere}
+  .profile-stats{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px!important;margin:10px 0!important}
+  .profile-stats span{text-align:center;font-size:10px!important;padding:7px 4px;border-radius:10px;background:var(--surface2)}
+  .profile-stats b{display:block;font-size:14px!important}
+  .profile-buttons,.profile-library{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px!important;width:100%}
+  .profile-buttons .btn,.profile-library .btn{width:100%;min-width:0;padding:9px 7px!important;font-size:10px!important;white-space:normal;text-align:center}
+  .profile-more{min-width:0}
+  .profile-more>summary{width:100%}
+  .profile-ad-slot{max-width:100%;overflow:hidden}
+  .highlight-rail{max-width:100%;overflow-x:auto}
+  .profile-grid,.explore-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:2px!important;width:100%}
+  .profile-tile,.explore-grid>a{min-width:0}
+  .profile-tile img,.profile-tile video,.explore-grid img{width:100%!important;height:100%!important;object-fit:cover}
+  .profile-tile>span,.explore-grid span{left:4px!important;bottom:4px!important;padding:3px 5px!important;font-size:8px!important}
+
+  .search{width:100%;min-width:0}
+  .search input,input,textarea,select{max-width:100%;min-width:0}
+  .creator-row{width:100%;max-width:100%;overflow-x:auto}
+  .creator-pill{min-width:112px}
+  .masonry{columns:1!important}
+
+  .admin-page-v15,.ad-admin-page,.ad-form-page{width:100%!important;max-width:none!important}
+  .admin-hero{display:grid!important;grid-template-columns:1fr!important;gap:10px!important}
+  .admin-hero-actions{justify-content:stretch!important}
+  .admin-hero-actions .btn{flex:1;min-width:0}
+  .admin-health-grid,.admin-stat-grid{grid-template-columns:1fr!important}
+  .admin-two-col,.ad-admin-layout{display:grid!important;grid-template-columns:1fr!important}
+  .admin-panel{padding:11px!important;border-radius:16px!important;overflow:hidden}
+  .admin-post-row,.admin-user-row,.ad-campaign-row{grid-template-columns:1fr!important;min-width:0}
+  .admin-post-row .admin-actions,.admin-user-row .admin-actions{grid-column:1!important;grid-row:auto!important;display:grid!important;grid-template-columns:1fr!important;width:100%}
+  .admin-actions form,.admin-actions .btn,.admin-actions select{width:100%!important;min-width:0}
+  .admin-filter{grid-template-columns:1fr!important}
+  .admin-user-badges{flex-wrap:wrap}
+
+  .bottom-nav,.bottom-nav.bottom-nav-v15{left:50%!important;right:auto!important;width:calc(100% - 10px)!important;max-width:560px!important;height:64px!important;bottom:max(5px,env(safe-area-inset-bottom))!important;padding:3px 5px!important;border-radius:20px!important;grid-template-columns:1fr 1fr 72px 1fr 1fr!important}
+  .bottom-nav-v15 .nav-item,.bottom-nav .nav-item{height:47px!important;min-width:0!important;font-size:7px!important}
+  .bottom-nav-v15 .nav-item svg,.bottom-nav .nav-item svg{width:18px!important;height:18px!important}
+  .bottom-nav-v15 .nav-create,.bottom-nav .nav-create{width:47px!important;height:47px!important;border-radius:16px!important;margin:-12px auto 0!important}
+
+  .ad-card,.network-ad-card{max-width:100%;overflow:hidden}
+  .ad-banner,.network-banner{max-width:100%;overflow:hidden}
+  iframe{max-width:100%}
+}
+
+@media(max-width:420px){
+  .content,.landing{padding-left:8px!important;padding-right:8px!important}
+  .profile-hero{grid-template-columns:68px minmax(0,1fr)!important;gap:9px!important}
+  .profile-avatar{width:68px!important;height:68px!important;min-width:68px!important}
+  .profile-main h1{font-size:17px!important}
+  .profile-buttons,.profile-library{grid-template-columns:1fr!important}
+  .post-body{font-size:12px}
+  .bottom-nav,.bottom-nav.bottom-nav-v15{width:calc(100% - 6px)!important}
+}
