@@ -8,6 +8,8 @@ const userSchema = new mongoose.Schema({
   passwordHash:{type:String,required:true},
   bio:{type:String,maxlength:220,default:''}, avatarUrl:{type:String,default:''}, avatarKey:{type:String,default:''}, coverUrl:{type:String,default:''},
   role:{type:String,enum:['user','creator','moderator','admin'],default:'user'},
+  accountOrigin:{type:String,enum:['organic','synthetic'],default:'organic',index:true},
+  managedByPlatform:{type:Boolean,default:false,index:true},
   creatorMode:{type:Boolean,default:false,index:true},
   creatorCategory:{type:String,enum:['','lifestyle','beauty','fashion','gaming','tech','education','art','music','food','travel','fitness','cars','humor','other'],default:''},
   creatorSince:{type:Date,default:null},
