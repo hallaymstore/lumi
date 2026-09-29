@@ -58,12 +58,12 @@ async function runManagedPulse(requested=150){
   const actors=Math.max(1,Math.min(500,Number(requested)||150));
   const [managed,targets,posts]=await Promise.all([
     User.aggregate([{$match:{accountOrigin:'synthetic',managedByPlatform:true,isSuspended:false}},{$sample:{size:actors}}]),
-    User.aggregate([{$match:{isSuspended:false}},{$sample:{size:Math.min(1000,actors*3)}}]),
+    User.aggregate([{$match:{isSuspended:false,isPrivate:false}},{$sample:{size:Math.min(1000,actors*3)}}]),
     Post.aggregate([{$match:{isHidden:false,status:'published'}},{$sample:{size:Math.min(1000,actors*4)}}])
   ]);
   const authorIds=[...new Set(posts.map(p=>String(p.author)).filter(Boolean))];
-  const authors=await User.find({_id:{$in:authorIds}}).select('_id accountOrigin').lean();
-  const authorMap=new Map(authors.map(a=>[String(a._id),a.accountOrigin]));
+  const authors=await User.find({_id:{$in:authorIds}}).select('_id accountOrigin isPrivate').lean();
+  const authorMap=new Map(authors.map(a=>[String(a._id),{origin:a.accountOrigin,isPrivate:!!a.isPrivate}]));
   let follows=0,likes=0,commentsMade=0;
   for(let i=0;i<managed.length;i++){
     const actor=managed[i],mode=i%10;
@@ -75,11 +75,11 @@ async function runManagedPulse(requested=150){
         if(r.upsertedCount)follows++;
       }
     }else if(mode<9&&posts.length){
-      const post=pick(posts,i,5);if(!post||String(post.author)===String(actor._id))continue;
+      const post=pick(posts,i,5);if(!post||String(post.author)===String(actor._id)||authorMap.get(String(post.author))?.isPrivate)continue;
       const r=await PostLike.updateOne({post:post._id,user:actor._id},{$setOnInsert:{post:post._id,user:actor._id,interactionOrigin:'synthetic'}},{upsert:true});
-      if(r.upsertedCount){likes++;if(authorMap.get(String(post.author))==='synthetic')await Post.updateOne({_id:post._id},{$inc:{syntheticLikeCount:1}})}
+      if(r.upsertedCount){likes++;if(authorMap.get(String(post.author))?.origin==='synthetic')await Post.updateOne({_id:post._id},{$inc:{syntheticLikeCount:1}})}
     }else{
-      const syntheticPosts=posts.filter(p=>authorMap.get(String(p.author))==='synthetic');
+      const syntheticPosts=posts.filter(p=>authorMap.get(String(p.author))?.origin==='synthetic'&&!authorMap.get(String(p.author))?.isPrivate);
       const post=pick(syntheticPosts,i,11);if(!post||String(post.author)===String(actor._id))continue;
       await Comment.create({post:post._id,user:actor._id,text:comments[i%comments.length],interactionOrigin:'synthetic'});
       await Post.updateOne({_id:post._id},{$inc:{syntheticCommentCount:1}});
@@ -92,7 +92,7 @@ async function runManagedPulse(requested=150){
 async function createManagedPost({username,caption,imageUrl}){
   const author=await User.findOne({username:String(username||'').toLowerCase(),accountOrigin:'synthetic',managedByPlatform:true});
   if(!author)throw new Error('Managed virtual profil topilmadi.');
-  const url=String(imageUrl||'').trim();
+  const url=String(imageUrl||'/icons/icon-192.png').trim();
   if(url&&!/^https:\/\//i.test(url)&&!/^\//.test(url))throw new Error('Rasm URL https:// yoki / bilan boshlansin.');
   const media=url?[{url,type:'image',width:0,height:0,thumbUrl:url,thumbKey:'',key:''}]:[];
   const post=await Post.create({author:author._id,caption:String(caption||'').trim().slice(0,2200),imageUrl:url,media,tags:[],likeCount:0,syntheticLikeCount:0,commentCount:0,syntheticCommentCount:0});
