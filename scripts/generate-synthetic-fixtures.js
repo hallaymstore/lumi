@@ -68,6 +68,7 @@ function profileFor(i){
     accountOrigin:'synthetic',
     managedByPlatform:true,
     publicLabel:'Virtual profile',
+    followTargets:['hallaym'],
     createdAt:createdAtFor(i)
   };
 }
