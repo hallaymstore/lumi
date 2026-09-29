@@ -17,6 +17,9 @@ router.post('/reports/:id/action',requireAuth,requireAdmin,async(req,res)=>{cons
 router.post('/announce',requireAuth,requireAdmin,async(req,res)=>{const text=String(req.body.text||'').trim().slice(0,180),target=['all','creators'].includes(req.body.target)?req.body.target:'all';if(text){const filter={isSuspended:false,_id:{$ne:req.currentUser._id}};if(target==='creators')filter.role='creator';const ids=await User.find(filter).select('_id').lean();for(let i=0;i<ids.length;i+=500)await Notification.insertMany(ids.slice(i,i+500).map(u=>({user:u._id,actor:req.currentUser._id,type:'system',text})),{ordered:false}).catch(()=>{});emitToUsers(ids.map(u=>String(u._id)),'notification',{text,type:'system'});await logAction(req,'system.announce','notification',target,`${ids.length} user · ${text}`)}res.redirect('/admin#announcement')});
 
 router.get('/managed',requireAuth,requireAdmin,async(req,res)=>{
+ const mq=String(req.query.mq||'').trim();
+ const managedFilter={accountOrigin:'synthetic',managedByPlatform:true};
+ if(mq){const rx=new RegExp(safeRegex(mq.replace(/^@/,'')),'i');managedFilter.$or=[{username:rx},{name:rx}]}
  const [syntheticUsers,organicUsers,syntheticFollows,syntheticLikes,syntheticComments,syntheticViews,recentManaged,recentTasks]=await Promise.all([
   User.countDocuments({accountOrigin:'synthetic',managedByPlatform:true}),
   User.countDocuments({accountOrigin:{$ne:'synthetic'}}),
@@ -24,11 +27,11 @@ router.get('/managed',requireAuth,requireAdmin,async(req,res)=>{
   PostLike.countDocuments({interactionOrigin:'synthetic'}),
   Comment.countDocuments({interactionOrigin:'synthetic'}),
   PostView.countDocuments({interactionOrigin:'synthetic'}),
-  User.find({accountOrigin:'synthetic',managedByPlatform:true}).sort({createdAt:-1}).limit(120).lean(),
+  User.find(managedFilter).sort({createdAt:-1}).limit(120).lean(),
   ManagedTask.find().sort({createdAt:-1}).limit(20).lean()
  ]);
  res.set('Cache-Control','no-store');
- res.render('admin/managed',{title:'Managed profiles',stats:{syntheticUsers,organicUsers,syntheticFollows,syntheticLikes,syntheticComments,syntheticViews},recentManaged,recentTasks,ok:String(req.query.ok||''),error:String(req.query.error||'')});
+ res.render('admin/managed',{title:'Managed profiles',stats:{syntheticUsers,organicUsers,syntheticFollows,syntheticLikes,syntheticComments,syntheticViews},recentManaged,recentTasks,mq,ok:String(req.query.ok||''),error:String(req.query.error||'')});
 });
 router.post('/managed/seed',requireAuth,requireAdmin,async(req,res)=>{
  try{const count=Math.max(1,Math.min(10000,Number(req.body.count)||10000));const result=await seedManagedProfiles(count);await logAction(req,'managed.seed','user','synthetic',JSON.stringify(result));res.redirect('/admin/managed?ok='+encodeURIComponent(result.created+' ta yangi virtual profil yaratildi. Jami: '+result.total));}
