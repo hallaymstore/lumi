@@ -9,7 +9,8 @@
     "start": "node app.js",
     "admin:bootstrap": "node scripts/bootstrap-admin.js",
     "migrate:v16": "node scripts/migrate-v16.js",
-    "check": "node scripts/check-project.js"
+    "check": "node scripts/check-project.js",
+    "fixtures:synthetic": "node scripts/generate-synthetic-fixtures.js"
   },
   "engines": {
     "node": ">=20"
