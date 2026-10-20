@@ -94,7 +94,7 @@ async function removeMessage(m){
 async function cleanupExpiredMessages(){
   const removed=await drain(Message,removeMessage,'Fresh message cleanup');
   // Chat notifications must not preserve the deleted message preview indefinitely.
-  await Notification.deleteMany({type:'message',createdAt:{$lt:new Date(Date.now()-48*60*60*1000)}});
+  if(process.env.FRESH_MESSAGES_ENABLED==='true')await Notification.deleteMany({type:'message',createdAt:{$lt:new Date(Date.now()-48*60*60*1000)}});
   return removed;
 }
 async function cleanupExpiredStories(){
