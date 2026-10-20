@@ -16,8 +16,9 @@ const StoryLike=require('../models/StoryLike');
 const StoryView=require('../models/StoryView');
 const {deleteMany}=require('./r2');
 
-const BATCH=Number(process.env.FRESH_CLEANUP_BATCH||40);
-const LEASE_MS=5*60*1000;
+const BATCH=Math.max(1,Math.min(1000,Number(process.env.FRESH_CLEANUP_BATCH||120)));
+const CONCURRENCY=Math.max(1,Math.min(12,Number(process.env.FRESH_CLEANUP_CONCURRENCY||6)));
+const LEASE_MS=10*60*1000;
 let running=false;
 
 function claimFilter(now){return {$or:[{cleanupLeaseUntil:null},{cleanupLeaseUntil:{$lte:now}}]}}
@@ -56,15 +57,25 @@ async function removePost(p){
     await User.updateOne({_id:p.author,postCount:{$gt:0}},{$inc:{postCount:-1}});
   }
 }
-async function cleanupExpiredPosts(){
-  let removed=0;
-  for(let i=0;i<BATCH;i++){
-    const p=await claim(Post,new Date());if(!p)break;
-    try{await removePost(p);removed++}
-    catch(e){console.error('Fresh post cleanup:',String(p._id),e.message);await Post.updateOne({_id:p._id},{$set:{cleanupLeaseUntil:null}}).catch(()=>{});break}
-  }
+async function drain(Model,handle,label){
+  let claims=0,removed=0;
+  await Promise.all(Array.from({length:Math.min(CONCURRENCY,BATCH)},async()=>{
+    while(claims<BATCH){
+      claims++;
+      let item;
+      try{item=await claim(Model,new Date())}catch(e){console.error(label+' claim:',e.message);break}
+      if(!item)break;
+      try{await handle(item);removed++}
+      catch(e){
+        console.error(label+':',String(item._id),e.message);
+        // Avoid one failing object starving all others; retry later.
+        await Model.updateOne({_id:item._id},{$set:{cleanupLeaseUntil:new Date(Date.now()+LEASE_MS)}}).catch(()=>{});
+      }
+    }
+  }));
   return removed;
 }
+async function cleanupExpiredPosts(){return drain(Post,removePost,'Fresh post cleanup')}
 async function removeMessage(m){
   await deleteMany([m.mediaKey]); // No message deletion if R2 fails
   await Conversation.updateMany({pinnedMessage:m._id},{$set:{pinnedMessage:null}});
@@ -81,12 +92,7 @@ async function removeMessage(m){
   }
 }
 async function cleanupExpiredMessages(){
-  let removed=0;
-  for(let i=0;i<BATCH;i++){
-    const m=await claim(Message,new Date());if(!m)break;
-    try{await removeMessage(m);removed++}
-    catch(e){console.error('Fresh message cleanup:',String(m._id),e.message);await Message.updateOne({_id:m._id},{$set:{cleanupLeaseUntil:null}}).catch(()=>{});break}
-  }
+  const removed=await drain(Message,removeMessage,'Fresh message cleanup');
   // Chat notifications must not preserve the deleted message preview indefinitely.
   await Notification.deleteMany({type:'message',createdAt:{$lt:new Date(Date.now()-48*60*60*1000)}});
   return removed;
@@ -122,7 +128,7 @@ function startFreshCleanup(){
   // expirations still require R2 + Mongo cleanup.
   // An expired record is hidden from reads immediately; worker removes R2 + DB in batches.
   cleanupFresh().catch(e=>console.error('Lumi Fresh cleanup:',e.message));
-  const mins=Math.max(1,Number(process.env.FRESH_CLEANUP_MINUTES||5));
+  const mins=Math.max(1,Number(process.env.FRESH_CLEANUP_MINUTES||1));
   const timer=setInterval(()=>cleanupFresh().catch(e=>console.error('Lumi Fresh cleanup:',e.message)),mins*60*1000);
   timer.unref?.();
 }
