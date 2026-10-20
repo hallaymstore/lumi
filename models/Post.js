@@ -27,6 +27,9 @@ const postSchema = new mongoose.Schema({
   likes:[{type:mongoose.Schema.Types.ObjectId,ref:'User'}], // legacy
   comments:[legacyCommentSchema], // legacy
   status:{type:String,enum:['published','draft','archived'],default:'published',index:true},
+  // Null on legacy and draft posts; do not use Mongo TTL (R2 cleanup must run first).
+  expiresAt:{type:Date,default:null,index:true},
+  cleanupLeaseUntil:{type:Date,default:null},
   editedAt:{type:Date,default:null},
   draftSavedAt:{type:Date,default:null},
   archivedAt:{type:Date,default:null},
@@ -45,6 +48,7 @@ const postSchema = new mongoose.Schema({
 },{timestamps:true});
 
 postSchema.index({createdAt:-1});
+postSchema.index({status:1,isHidden:1,expiresAt:1,createdAt:-1});
 postSchema.index({author:1,createdAt:-1});
 postSchema.index({author:1,status:1,updatedAt:-1});
 postSchema.index({isHidden:1,qualityScore:-1,createdAt:-1});
