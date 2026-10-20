@@ -1,4 +1,5 @@
 const mongoose=require('mongoose');
+const messageRetentionMs=48*60*60*1000;
 const reactionSchema=new mongoose.Schema({user:{type:mongoose.Schema.Types.ObjectId,ref:'User',required:true},emoji:{type:String,enum:['❤️','😂','🔥','😮','👍'],required:true}},{_id:false});
 const schema=new mongoose.Schema({
   conversation:{type:mongoose.Schema.Types.ObjectId,ref:'Conversation',required:true,index:true}, sender:{type:mongoose.Schema.Types.ObjectId,ref:'User',required:true,index:true},
@@ -7,7 +8,11 @@ const schema=new mongoose.Schema({
   storyPreviewUrl:{type:String,default:''},storyPreviewCaption:{type:String,maxlength:120,default:''},storyAuthorUsername:{type:String,maxlength:24,default:''},
   mediaUrl:{type:String,default:''},mediaKey:{type:String,default:''},mediaType:{type:String,enum:['image','video','audio','file'],default:null},mediaName:{type:String,maxlength:180,default:''},
   ephemeral:{type:Boolean,default:false,index:true},ephemeralOpenedAt:{type:Date,default:null},ephemeralExpiresAt:{type:Date,default:null,index:true},ephemeralOpenedBy:{type:mongoose.Schema.Types.ObjectId,ref:'User',default:null},ephemeralConsumedAt:{type:Date,default:null},
+  // Only newly created messages get a lifetime when the feature is enabled.
+  // No Mongo TTL index: the cleanup worker must remove media from R2 first.
+  expiresAt:{type:Date,default:()=>process.env.FRESH_MESSAGES_ENABLED==='true'?new Date(Date.now()+messageRetentionMs):null,index:true},
+  cleanupLeaseUntil:{type:Date,default:null},
   reactions:[reactionSchema],readBy:[{type:mongoose.Schema.Types.ObjectId,ref:'User'}]
 },{timestamps:true});
-schema.index({conversation:1,createdAt:-1}); schema.index({ephemeral:1,ephemeralExpiresAt:1});
+schema.index({conversation:1,expiresAt:1,createdAt:-1}); schema.index({conversation:1,createdAt:-1}); schema.index({ephemeral:1,ephemeralExpiresAt:1});
 module.exports=mongoose.model('Message',schema);
