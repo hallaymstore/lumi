@@ -1,6 +1,9 @@
 // Fresh post remaining-time indicator, synced with the server's absolute expiry.
 (function(){
   function update(){
+    document.querySelectorAll('[data-post-expires]').forEach(function(el){
+      const when=el.getAttribute('data-post-expires');if(when&&Date.parse(when)<=Date.now())el.remove();
+    });
     document.querySelectorAll('[data-message-wrap][data-expires-at]').forEach(function(el){
       const value=el.getAttribute('data-expires-at');if(value&&Date.parse(value)<=Date.now())el.remove();
     });
@@ -11,6 +14,9 @@
       if(ms<=0){
         const card=el.closest('[data-post-id]');
         if(card){card.remove();return}
+        const next=el.nextElementSibling;
+        if(next&&next.matches('.post-card'))next.remove();
+        el.remove();return
         el.textContent='Muddati tugadi';return;
       }
       const mins=Math.ceil(ms/60000);
