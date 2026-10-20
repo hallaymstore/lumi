@@ -4,7 +4,7 @@
 - New published posts: 24 hours (`FRESH_POSTS_ENABLED=true`).
 - New chat messages: 48 hours (`FRESH_MESSAGES_ENABLED=true`).
 - Existing posts/messages **do not change** until operator runs an explicit audited migration.
-- Expired records are excluded from queries immediately. Worker scans every 5 minutes in small batches and deletes Cloudflare R2 media before MongoDB records. Deletion can lag under outages or large backlogs.
+- Expired records are excluded from queries immediately. Worker scans every 1 minute in small bounded concurrent batches and deletes Cloudflare R2 media before MongoDB records. Deletion can lag under outages or large backlogs.
 - Story presence already expires after 24 hours. Optional `FRESH_STORY_PURGE_ENABLED=true` removes non-highlight Story media after a 7-day grace. Highlights intentionally remain (user-pinned).
 - Drafts, account profiles, chat participants, security/moderation evidence and legally mandated payout records have separate retention requirements. Never TTL payment records.
 - R2 public media links may remain browser/CDN-cached for their advertised cache lifetime; social page links are denied once expired. For genuinely private media, use authenticated/signed URLs.
@@ -15,7 +15,7 @@
 3. Run `npm ci && npm run check && node --test test/fresh-retention.test.js`.
 4. Staging: set `FRESH_POSTS_ENABLED=true`, `FRESH_MESSAGES_ENABLED=true`,
    `FRESH_STORY_PURGE_ENABLED=true`, `FRESH_STORY_PURGE_DAYS=7`,
-   `FRESH_CLEANUP_MINUTES=5`, `FRESH_CLEANUP_BATCH=40`.
+   `FRESH_CLEANUP_MINUTES=1`, `FRESH_CLEANUP_BATCH=120`, `FRESH_CLEANUP_CONCURRENCY=6`.
 5. Validate at least two users: make post, send text/image/voice chat, upload Story, follow, search, share, pin, and review after expiration. To shorten testing, use **staging DB** with hand-set expiresAt values instead of changing production clocks.
 6. Announce new time-limited behavior in UI and policy. Existing users must accept the updated terms.
 7. Deploy and watch logs `Lumi Fresh cleanup`, R2 deletions, CPU, memory, Mongo storage, DB query response time, Redis/SSE and request latency.
