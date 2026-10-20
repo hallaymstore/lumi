@@ -54,7 +54,7 @@ router.get('/trending',async(req,res)=>{
     User.find({isSuspended:false,$or:[{creatorMode:true},{role:'creator'}]}).sort({followerCount:-1,postCount:-1,createdAt:-1}).limit(18).lean()
   ]);
   res.set('Cache-Control','public, max-age=120, stale-while-revalidate=300');
-  res.render('trending',{title:'Trendlar',tags,posts,creators,metaTitle:'Lumi trendlar',metaDescription:'Lumi’dagi trend hashtaglar, postlar va creatorlar.'});
+  res.render('trending',{title:'Trendlar',tags,posts,creators,activeTag:null,metaTitle:'Lumi trendlar',metaDescription:'Lumi’dagi trend hashtaglar, postlar va creatorlar.'});
 });
 router.get('/tags/:tag',async(req,res)=>{
   const tag=String(req.params.tag||'').replace(/^#/,'').toLowerCase().replace(/[^a-z0-9._-]/g,'').slice(0,40);if(!tag)return res.redirect('/trending');
