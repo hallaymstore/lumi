@@ -1,5 +1,5 @@
 const mongoose=require('mongoose');
-const Post=require('../models/Post');
+const Post=require('../models/Post');const {publishedQuery}=require('./freshPosts');
 const Follow=require('../models/Follow');
 const FeedEvent=require('../models/FeedEvent');
 const UserRelation=require('../models/UserRelation');
@@ -58,7 +58,7 @@ async function hydrateAuthors(mixed){
 }
 
 async function candidatePools(me,mode='foryou',sig=null){
-  const base={isHidden:false},now=Date.now();sig=sig||await userSignals(me?._id);
+  const base=publishedQuery(),now=Date.now();sig=sig||await userSignals(me?._id);
   if(mode==='new')return Post.find(base).sort({createdAt:-1}).limit(220).populate('author','name username avatarUrl isVerified followerCount isPrivate accountOrigin').lean();
   if(mode==='following'&&me){if(!sig.following.size)return [];return Post.find({...base,author:{$in:[...sig.following]}}).sort({createdAt:-1}).limit(260).populate('author','name username avatarUrl isVerified followerCount isPrivate accountOrigin').lean()}
 
