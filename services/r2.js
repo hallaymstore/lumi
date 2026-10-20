@@ -31,7 +31,7 @@ async function uploadStream(stream,prefix='media',contentType='application/octet
   if(!ext)throw new Error('Bu media turi qo‘llanmaydi.');
   const size=Number(contentLength||0);if(!Number.isFinite(size)||size<=0)throw new Error('Fayl hajmi aniqlanmadi.');
   const key=`${String(prefix||'media').replace(/[^a-z0-9_\-/]/gi,'').replace(/^\/+|\/+$/g,'')}/${Date.now()}-${crypto.randomBytes(10).toString('hex')}.${ext}`;
-  await client().send(new PutObjectCommand({Bucket:process.env.R2_BUCKET,Key:key,Body:stream,ContentLength:size,ContentType:mime,CacheControl:'public, max-age=31536000, immutable',ContentDisposition:'inline'}));
+  await client().send(new PutObjectCommand({Bucket:process.env.R2_BUCKET,Key:key,Body:stream,ContentLength:size,ContentType:mime,CacheControl:'public, max-age=3600',ContentDisposition:'inline'}));
   return {key,url:publicUrl(key),thumbKey:'',thumbUrl:'',width:0,height:0,type:mime.startsWith('video/')?'video':'image'};
 }
 
@@ -46,17 +46,26 @@ async function uploadFile(file,prefix='media',options={}){
     const mainBuf=await img.clone().resize({width:max,height:max,fit:'inside',withoutEnlargement:true}).webp({quality:Number(options.quality||84),effort:4}).toBuffer();
     const thumbBuf=await img.clone().resize({width:360,height:360,fit:'cover',withoutEnlargement:true}).webp({quality:74,effort:3}).toBuffer();
     const base=`${prefix}/${Date.now()}-${crypto.randomBytes(8).toString('hex')}`;
-    const main=await put(mainBuf,`${base}.webp`,'image/webp',options.cacheControl||'public, max-age=31536000, immutable');
-    const thumb=await put(thumbBuf,`${base}-thumb.webp`,'image/webp',options.cacheControl||'public, max-age=31536000, immutable');
+    const main=await put(mainBuf,`${base}.webp`,'image/webp',options.cacheControl||'public, max-age=3600');
+    const thumb=await put(thumbBuf,`${base}-thumb.webp`,'image/webp',options.cacheControl||'public, max-age=3600');
     return {...main,thumbKey:thumb.key,thumbUrl:thumb.url,width:meta.width||0,height:meta.height||0,type:'image'};
   }
   const ext=(String(file.originalname||'file').split('.').pop()||'bin').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,8)||'bin';
   const key=`${prefix}/${Date.now()}-${crypto.randomBytes(8).toString('hex')}.${ext}`;
-  const out=await put(file.buffer,key,file.mimetype||'application/octet-stream',options.cacheControl||'public, max-age=31536000, immutable');
+  const out=await put(file.buffer,key,file.mimetype||'application/octet-stream',options.cacheControl||'public, max-age=3600');
   return {...out,thumbKey:'',thumbUrl:'',width:0,height:0,type:(file.mimetype||'').startsWith('video/')?'video':(file.mimetype||'').startsWith('audio/')?'audio':'file'};
 }
 async function uploadImage(file,prefix='posts',options={}){return uploadFile(file,prefix,options)}
-async function deleteImage(key){if(!key||!configured())return;await client().send(new DeleteObjectCommand({Bucket:process.env.R2_BUCKET,Key:key})).catch(()=>{})}
+async function deleteImage(key){if(!key)return;if(!configured())throw new Error('R2 sozlanmagan: media o‘chirilmaydi.');await client().send(new DeleteObjectCommand({Bucket:process.env.R2_BUCKET,Key:key}));}
 async function deleteMany(keys=[]){await Promise.all([...new Set(keys.filter(Boolean))].map(deleteImage))}
 async function listPrefix(prefix,maxKeys=1000){if(!configured())return [];const out=[];let token;do{const r=await client().send(new ListObjectsV2Command({Bucket:process.env.R2_BUCKET,Prefix:prefix,MaxKeys:Math.min(1000,maxKeys-out.length),ContinuationToken:token}));out.push(...(r.Contents||[]));token=r.IsTruncated?r.NextContinuationToken:null}while(token&&out.length<maxKeys);return out}
-module.exports={uploadImage,uploadFile,uploadStream,deleteImage,deleteMany,listPrefix,configured,publicUrl};
+async function listPrefixPage(prefix,maxKeys=250,startAfter=''){
+  if(!configured())return {objects:[],nextStartAfter:''};
+  const page=await client().send(new ListObjectsV2Command({
+    Bucket:process.env.R2_BUCKET,Prefix:prefix,
+    MaxKeys:Math.max(1,Math.min(1000,maxKeys)),...(startAfter?{StartAfter:startAfter}:{})
+  }));
+  const objects=page.Contents||[];
+  return {objects,nextStartAfter:page.IsTruncated&&objects.length?objects[objects.length-1].Key:''};
+}
+module.exports={uploadImage,uploadFile,uploadStream,deleteImage,deleteMany,listPrefix,listPrefixPage,configured,publicUrl};

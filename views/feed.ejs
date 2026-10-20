@@ -1,6 +1,7 @@
 <%- include('partials/head') %><%- include('partials/topbar') %>
 <main class="content feed-layout"><section class="feed-column" data-feed-nonce="<%=feedNonce%>">
   <div class="feed-tabs glass"><a class="<%=feedMode==='foryou'?'active':''%>" href="/feed?tab=foryou">For You</a><a class="<%=feedMode==='following'?'active':''%>" href="/feed?tab=following">Following</a><a class="<%=feedMode==='new'?'active':''%>" href="/feed?tab=new">Yangi</a></div>
+  <% if(freshPostsEnabled){ %><div class="card" style="padding:10px 14px;display:flex;align-items:center;gap:10px"><i data-lucide="timer" style="color:var(--primary,#f45)"></i><div><b>Fresh 24h</b><div class="muted tiny">Har kun yangi kontent. Fresh postlar 24 soatdan keyin yo‘qoladi.</div></div></div><% } %>
   <% if(!currentUser){ %><div class="guest-banner card"><span><i data-lucide="sparkles"></i></span><div><b>Lumi’ni erkin tomosha qiling</b><p>Guest ko‘rishlar ham hisoblanadi. Like, comment, follow va chat uchun hisob kerak.</p></div><a class="btn primary" href="/register">Qo‘shilish</a></div><% } %>
   <%- include('partials/storystrip', { storyPeople }) %>
   <% if(!posts.length){ %><div class="empty card"><i data-lucide="image-plus"></i><h2>Bu bo‘lim hali bo‘sh</h2><p><%=feedMode==='following'?'Obuna bo‘lgan creatorlaringiz postlari shu yerda chiqadi.':'Birinchi postni joylash uchun Lumi’ga qo‘shiling ✨'%></p><a class="btn primary" href="<%= currentUser ? '/explore' : '/register' %>"><%= currentUser ? 'Creator topish' : 'Ro‘yxatdan o‘tish' %></a></div><% } %>
@@ -12,6 +13,7 @@
       : Math.min(Number(adConfig?.maxAdsPerPage||6),feedAds?.length||0);
     posts.forEach((p,i)=>{
   %>
+    <%if(p.expiresAt){%><div class="fresh-expiry-badge" data-fresh-until="<%=new Date(p.expiresAt).toISOString()%>">⏳ Fresh 24h</div><%}%>
     <%- include('partials/postcard', { p }) %>
     <% if(adConfig?.enabled && adSlot<adLimit && smartPositions.has(i+1)){
          const ad=feedAds?.[adSlot];

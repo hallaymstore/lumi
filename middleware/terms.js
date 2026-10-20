@@ -1,4 +1,4 @@
-const TERMS_VERSION = '2026-09-13';
+const TERMS_VERSION = '2026-10-20';
 
 function wantsJson(req) {
   return req.xhr || String(req.get('accept') || '').includes('application/json');

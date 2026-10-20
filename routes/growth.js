@@ -8,7 +8,7 @@ const SavedPost=require('../models/SavedPost');
 const Follow=require('../models/Follow');
 const UserRelation=require('../models/UserRelation');
 const Message=require('../models/Message');
-const Story=require('../models/Story');
+const Story=require('../models/Story');const {expirationForPublish,publishedQuery}=require('../services/freshPosts');
 const Notification=require('../models/Notification');
 const FeedEvent=require('../models/FeedEvent');
 const {requireAuth}=require('../middleware/auth');
@@ -49,16 +49,16 @@ router.post('/onboarding/interests',requireAuth,async(req,res)=>{
 router.get('/trending',async(req,res)=>{
   const since=new Date(Date.now()-30*864e5);
   const [tags,posts,creators]=await Promise.all([
-    Post.aggregate([{$match:{isHidden:false,createdAt:{$gte:since},tags:{$exists:true,$ne:[]}}},{$unwind:'$tags'},{$group:{_id:'$tags',posts:{$sum:1},score:{$sum:{$add:[1,{$multiply:[{$ifNull:['$likeCount',0]},3]},{$multiply:[{$ifNull:['$commentCount',0]},5]},{$multiply:[{$ifNull:['$saveCount',0]},7]},{$multiply:[{$ifNull:['$shareCount',0]},9]}]}}}},{$sort:{score:-1,posts:-1}},{$limit:30}]),
-    Post.find({isHidden:false}).sort({qualityScore:-1,saveCount:-1,shareCount:-1,viewCount:-1,createdAt:-1}).limit(30).populate('author','name username avatarUrl isVerified creatorMode creatorCategory').lean(),
+    Post.aggregate([{$match:publishedQuery({createdAt:{$gte:since},tags:{$exists:true,$ne:[]}})},{$unwind:'$tags'},{$group:{_id:'$tags',posts:{$sum:1},score:{$sum:{$add:[1,{$multiply:[{$ifNull:['$likeCount',0]},3]},{$multiply:[{$ifNull:['$commentCount',0]},5]},{$multiply:[{$ifNull:['$saveCount',0]},7]},{$multiply:[{$ifNull:['$shareCount',0]},9]}]}}}},{$sort:{score:-1,posts:-1}},{$limit:30}]),
+    Post.find(publishedQuery()).sort({qualityScore:-1,saveCount:-1,shareCount:-1,viewCount:-1,createdAt:-1}).limit(30).populate('author','name username avatarUrl isVerified creatorMode creatorCategory').lean(),
     User.find({isSuspended:false,$or:[{creatorMode:true},{role:'creator'}]}).sort({followerCount:-1,postCount:-1,createdAt:-1}).limit(18).lean()
   ]);
   res.set('Cache-Control','public, max-age=120, stale-while-revalidate=300');
-  res.render('trending',{title:'Trendlar',tags,posts,creators,metaTitle:'Lumi trendlar',metaDescription:'Lumi’dagi trend hashtaglar, postlar va creatorlar.'});
+  res.render('trending',{title:'Trendlar',tags,posts,creators,activeTag:null,metaTitle:'Lumi trendlar',metaDescription:'Lumi’dagi trend hashtaglar, postlar va creatorlar.'});
 });
 router.get('/tags/:tag',async(req,res)=>{
   const tag=String(req.params.tag||'').replace(/^#/,'').toLowerCase().replace(/[^a-z0-9._-]/g,'').slice(0,40);if(!tag)return res.redirect('/trending');
-  const posts=await Post.find({isHidden:false,tags:tag}).sort({qualityScore:-1,createdAt:-1}).limit(80).populate('author','name username avatarUrl isVerified creatorMode').lean();
+  const posts=await Post.find(publishedQuery({tags:tag})).sort({qualityScore:-1,createdAt:-1}).limit(80).populate('author','name username avatarUrl isVerified creatorMode').lean();
   res.render('trending',{title:'#'+tag,tags:[{_id:tag,posts:posts.length,score:0}],posts,creators:[],activeTag:tag,metaTitle:`#${tag} · Lumi`,metaDescription:`Lumi’da #${tag} bo‘yicha postlar.`});
 });
 
@@ -106,7 +106,7 @@ router.post('/posts/create-streamed',requireAuth,async(req,res)=>{
     media=verified.map(x=>({url:x.url,key:x.key,type:x.type,width:0,height:0,thumbUrl:'',thumbKey:''}));
     const intent=req.body.intent==='draft'?'draft':'publish';const caption=String(req.body.caption||'').trim().slice(0,2200);if(intent==='publish'&&!media.length)throw new Error('Post uchun kamida bitta media kerak.');if(intent==='draft'&&!caption&&!media.length)throw new Error('Qoralama uchun caption yoki media kiriting.');
     const tags=cleanTags(req.body.tags),mentionedUsers=await resolveMentions(caption);const isDraft=intent==='draft';
-    const post=await Post.create({author:req.currentUser._id,caption,imageUrl:media[0]?.url||'',imageKey:media[0]?.key||'',media,tags,mentions:mentionedUsers.map(u=>u._id),status:isDraft?'draft':'published',isHidden:isDraft,draftSavedAt:isDraft?new Date():null,likeCount:0,commentCount:0});
+    const post=await Post.create({author:req.currentUser._id,caption,imageUrl:media[0]?.url||'',imageKey:media[0]?.key||'',media,tags,mentions:mentionedUsers.map(u=>u._id),status:isDraft?'draft':'published',isHidden:isDraft,draftSavedAt:isDraft?new Date():null,expiresAt:isDraft?null:expirationForPublish(),likeCount:0,commentCount:0});
     if(!isDraft){await User.findByIdAndUpdate(req.currentUser._id,{$inc:{postCount:1}}).catch(()=>{});await Promise.all(mentionedUsers.filter(u=>String(u._id)!==String(req.currentUser._id)).map(u=>createNotification({user:u._id,actor:req.currentUser._id,type:'mention',post:post._id,text:`@${req.currentUser.username} sizni postda belgiladi.`}).catch(()=>{})))}
     res.redirect(isDraft?'/posts/drafts':'/p/'+post._id);
   }catch(e){res.status(400).render('posts/create',{title:'Yangi post',error:e.message||'Post saqlanmadi.'})}
