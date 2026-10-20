@@ -11,7 +11,8 @@
     "migrate:v16": "node scripts/migrate-v16.js",
     "check": "node scripts/check-project.js",
     "fixtures:synthetic": "node scripts/generate-synthetic-fixtures.js",
-    "fixtures:import-staging": "node scripts/import-synthetic-staging.js"
+    "fixtures:import-staging": "node scripts/import-synthetic-staging.js",
+    "fresh:migrate": "node scripts/migrate-fresh-retention.js"
   },
   "engines": {
     "node": ">=20"
