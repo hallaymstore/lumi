@@ -18,7 +18,7 @@ test('Expired posts not visible even before physical deletion',()=>{
   assert.equal(isActive({expiresAt:new Date(+now+1)},now),true);
   assert.equal(isActive({expiresAt:null},now),true);
   const q=publishedQuery({author:'test'},now);
-  assert.equal(q.author,'test');assert.equal(q.status,'published');assert.equal(q.isHidden,false);
+  assert.equal(q.author,'test');assert.deepEqual(q.status,{$in:['published',null]});assert.equal(q.isHidden,false);
   assert.ok(Array.isArray(q.$and));
   assert.ok(Array.isArray(activeQuery({},now).$and));
 });
