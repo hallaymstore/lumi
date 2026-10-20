@@ -20,7 +20,7 @@
       </div>
     </details>
   <% } else if(currentUser){ %>
-    <form method="post" action="/u/<%=profile.username%>/follow" class="profile-follow-form"><button class="btn <%=isFollowing||followPending?'ghost':'primary'%> profile-action-main"><i data-lucide="<%=isFollowing?'user-check':followPending?'clock':'user-plus'%>"></i><span><%=isFollowing?'Kuzatilmoqda':followPending?'So‘rov yuborildi':'Obuna bo‘lish'%></span></button></form>
+    <form method="post" action="/u/<%=profile.username%>/follow" class="profile-follow-form"><button class="btn <%=isFollowing||followPending?'ghost':'primary'%> profile-action-main"><i data-lucide="<%=isFollowing?'user-check':followPending?'clock':'user-plus'%>"></i><span><%=isFollowing?'Bekor qilish':followPending?'So‘rovni bekor':'Obuna bo‘lish'%></span></button></form>
     <%if(isFollowing&&profile.allowMessages!=='nobody'){%><a class="btn ghost profile-action-icon" href="/chats/with/<%=profile.username%>" aria-label="Xabar" title="Xabar"><i data-lucide="message-circle"></i></a><%}%>
     <button class="btn ghost profile-action-icon" type="button" data-share-profile data-profile-url="/u/<%=profile.username%>" data-profile-title="<%=profile.name%> (@<%=profile.username%>)" aria-label="Ulashish" title="Ulashish"><i data-lucide="share-2"></i></button>
     <details class="profile-action-menu"><summary class="btn ghost profile-action-icon" aria-label="Boshqa amallar" title="Boshqa amallar"><i data-lucide="ellipsis"></i></summary><div class="profile-action-dropdown">
