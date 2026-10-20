@@ -5,6 +5,7 @@
 .profile-quick-actions .btn{display:inline-flex!important;align-items:center;justify-content:center;gap:6px;min-height:36px;min-width:0;padding:7px 12px!important;font-size:12px!important;white-space:nowrap;line-height:1.1}
 .profile-quick-actions .profile-action-main{min-width:112px;max-width:175px}
 .profile-quick-actions .profile-action-icon{width:37px;min-width:37px;height:37px;padding:0!important;border-radius:11px}
+.profile-quick-actions .profile-action-icon span{display:none!important}
 .profile-quick-actions .profile-action-icon svg{width:17px;height:17px;flex-shrink:0}
 .profile-quick-actions .profile-follow-form{margin:0;display:flex;max-width:190px;min-width:0}
 .profile-quick-actions .profile-follow-form .btn{width:100%}
