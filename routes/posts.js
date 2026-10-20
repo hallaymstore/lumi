@@ -6,7 +6,7 @@ const upload=multer({storage:multer.memoryStorage(),limits:{fileSize:20*1024*102
 function wantsJson(req){return req.xhr||(req.get('accept')||'').includes('application/json')}
 function countLegacy(post){return {likes:Math.max(Number(post.likeCount||0),post.likes?.length||0),comments:Math.max(Number(post.commentCount||0),post.comments?.length||0)}}
 async function canAccessPost(user,post){
-  if(!post||!isActive(post)||post.isHidden||post.status!=='published')return false;const authorId=post.author?._id||post.author;if(!authorId)return false;
+  if(!post||!isActive(post)||post.isHidden||(post.status&&post.status!=='published'))return false;const authorId=post.author?._id||post.author;if(!authorId)return false;
   let isPrivate=typeof post.author==='object'&&post.author!==null&&Object.prototype.hasOwnProperty.call(post.author,'isPrivate')?!!post.author.isPrivate:null;
   if(isPrivate===null){const a=await User.findById(authorId).select('isPrivate').lean();if(!a)return false;isPrivate=!!a.isPrivate}
   if(!isPrivate)return true;if(user&&String(user._id)===String(authorId))return true;if(!user)return false;
