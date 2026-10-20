@@ -31,7 +31,7 @@ router.post('/create-draft',requireAuth,upload.array('images',10),async(req,res)
 }catch(e){res.status(400).render('posts/create',{title:'Yangi post',error:e.message||'Qoralama saqlanmadi.'})}});
 
 router.get('/drafts',requireAuth,async(req,res)=>{const posts=await Post.find({author:req.currentUser._id,status:'draft'}).sort({updatedAt:-1}).lean();res.render('profile/collection',{title:'Qoralamalar',heading:'Qoralamalar',empty:'Hozircha qoralama yo‘q.',posts,mode:'draft'})});
-router.get('/archived',requireAuth,async(req,res)=>{const posts=await Post.find({author:req.currentUser._id,status:'archived'}).sort({archivedAt:-1,updatedAt:-1}).lean();res.render('profile/collection',{title:'Arxiv',heading:'Arxivlangan postlar',empty:'Hozircha arxivlangan post yo‘q.',posts,mode:'archived'})});
+router.get('/archived',requireAuth,async(req,res)=>{const posts=await Post.find({author:req.currentUser._id,status:'archived',$or:[{expiresAt:null},{expiresAt:{$gt:new Date()}}]}).sort({archivedAt:-1,updatedAt:-1}).lean();res.render('profile/collection',{title:'Arxiv',heading:'Arxivlangan postlar',empty:'Hozircha arxivlangan post yo‘q.',posts,mode:'archived'})});
 
 router.get('/:id/edit',requireAuth,async(req,res)=>{const post=await ownPost(req);if(!post)return res.sendStatus(404);res.render('posts/edit',{title:'Postni tahrirlash',post,error:null})});
 router.post('/:id/edit',requireAuth,upload.array('images',10),async(req,res)=>{const post=await ownPost(req);if(!post)return res.sendStatus(404);try{
@@ -39,7 +39,7 @@ router.post('/:id/edit',requireAuth,upload.array('images',10),async(req,res)=>{c
   post.caption=caption;post.tags=cleanTags(req.body.tags);post.mentions=mentionedUsers.map(u=>u._id);post.editedAt=new Date();
   if((req.files||[]).length){const oldKeys=mediaKeys(post);const media=await uploadMedia(req.files);post.media=media;post.imageUrl=media[0]?.url||'';post.imageKey=media[0]?.key||'';await deleteMany(oldKeys).catch(()=>{})}
   const intent=String(req.body.intent||'save');
-  if(intent==='draft'&&oldStatus==='published'){post.status='draft';post.isHidden=true;post.isPinned=false;post.draftSavedAt=new Date();await adjustPublishedCount(post.author,-1)}
+  if(intent==='draft'&&oldStatus==='published'){post.status='draft';post.isHidden=true;post.isPinned=false;post.draftSavedAt=new Date();post.expiresAt=null;await adjustPublishedCount(post.author,-1)}
   else if(intent==='publish'&&oldStatus!=='published'){post.status='published';post.isHidden=false;post.archivedAt=null;post.draftSavedAt=null;post.expiresAt=expirationForPublish();await adjustPublishedCount(post.author,1)}
   await post.save();
   res.redirect(post.status==='draft'?'/posts/drafts':post.status==='archived'?'/posts/archived':'/p/'+post._id);
