@@ -8,7 +8,7 @@ const SavedPost=require('../models/SavedPost');
 const Follow=require('../models/Follow');
 const UserRelation=require('../models/UserRelation');
 const Message=require('../models/Message');
-const Story=require('../models/Story');
+const Story=require('../models/Story');const {expirationForPublish,publishedQuery}=require('../services/freshPosts');
 const Notification=require('../models/Notification');
 const FeedEvent=require('../models/FeedEvent');
 const {requireAuth}=require('../middleware/auth');
@@ -106,7 +106,7 @@ router.post('/posts/create-streamed',requireAuth,async(req,res)=>{
     media=verified.map(x=>({url:x.url,key:x.key,type:x.type,width:0,height:0,thumbUrl:'',thumbKey:''}));
     const intent=req.body.intent==='draft'?'draft':'publish';const caption=String(req.body.caption||'').trim().slice(0,2200);if(intent==='publish'&&!media.length)throw new Error('Post uchun kamida bitta media kerak.');if(intent==='draft'&&!caption&&!media.length)throw new Error('Qoralama uchun caption yoki media kiriting.');
     const tags=cleanTags(req.body.tags),mentionedUsers=await resolveMentions(caption);const isDraft=intent==='draft';
-    const post=await Post.create({author:req.currentUser._id,caption,imageUrl:media[0]?.url||'',imageKey:media[0]?.key||'',media,tags,mentions:mentionedUsers.map(u=>u._id),status:isDraft?'draft':'published',isHidden:isDraft,draftSavedAt:isDraft?new Date():null,likeCount:0,commentCount:0});
+    const post=await Post.create({author:req.currentUser._id,caption,imageUrl:media[0]?.url||'',imageKey:media[0]?.key||'',media,tags,mentions:mentionedUsers.map(u=>u._id),status:isDraft?'draft':'published',isHidden:isDraft,draftSavedAt:isDraft?new Date():null,expiresAt:isDraft?null:expirationForPublish(),likeCount:0,commentCount:0});
     if(!isDraft){await User.findByIdAndUpdate(req.currentUser._id,{$inc:{postCount:1}}).catch(()=>{});await Promise.all(mentionedUsers.filter(u=>String(u._id)!==String(req.currentUser._id)).map(u=>createNotification({user:u._id,actor:req.currentUser._id,type:'mention',post:post._id,text:`@${req.currentUser.username} sizni postda belgiladi.`}).catch(()=>{})))}
     res.redirect(isDraft?'/posts/drafts':'/p/'+post._id);
   }catch(e){res.status(400).render('posts/create',{title:'Yangi post',error:e.message||'Post saqlanmadi.'})}
