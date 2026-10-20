@@ -13,6 +13,7 @@
       : Math.min(Number(adConfig?.maxAdsPerPage||6),feedAds?.length||0);
     posts.forEach((p,i)=>{
   %>
+    <%if(p.expiresAt){%><div class="fresh-expiry-badge" data-fresh-until="<%=new Date(p.expiresAt).toISOString()%>">⏳ Fresh 24h</div><%}%>
     <%- include('partials/postcard', { p }) %>
     <% if(adConfig?.enabled && adSlot<adLimit && smartPositions.has(i+1)){
          const ad=feedAds?.[adSlot];
