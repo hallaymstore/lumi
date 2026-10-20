@@ -12,7 +12,8 @@
     "check": "node scripts/check-project.js",
     "fixtures:synthetic": "node scripts/generate-synthetic-fixtures.js",
     "fixtures:import-staging": "node scripts/import-synthetic-staging.js",
-    "fresh:migrate": "node scripts/migrate-fresh-retention.js"
+    "fresh:migrate": "node scripts/migrate-fresh-retention.js",
+    "check:views": "node scripts/check-views.js"
   },
   "engines": {
     "node": ">=20"
