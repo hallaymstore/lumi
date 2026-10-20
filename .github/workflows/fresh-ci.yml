@@ -15,4 +15,5 @@ jobs:
           cache: npm
       - run: npm ci --no-audit --no-fund
       - run: npm run check
+      - run: npm run check:views
       - run: node --test test/fresh-retention.test.js
