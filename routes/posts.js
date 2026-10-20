@@ -1,12 +1,12 @@
 const router=require('express').Router();
 const multer=require('multer');
 const Post=require('../models/Post');const User=require('../models/User');const Follow=require('../models/Follow');const UserRelation=require('../models/UserRelation');const PostLike=require('../models/PostLike');const SavedPost=require('../models/SavedPost');const Comment=require('../models/Comment');const CommentLike=require('../models/CommentLike');const Report=require('../models/Report');
-const {requireAuth}=require('../middleware/auth');const {uploadFile,deleteMany}=require('../services/r2');const {resolveMentions}=require('../utils/mentions');const {createNotification}=require('../services/notify');const {recordEvent,recalcQuality}=require('../services/feed');
+const {requireAuth}=require('../middleware/auth');const {uploadFile,deleteMany}=require('../services/r2');const {resolveMentions}=require('../utils/mentions');const {createNotification}=require('../services/notify');const {recordEvent,recalcQuality}=require('../services/feed');const {expirationForPublish,isActive}=require('../services/freshPosts');
 const upload=multer({storage:multer.memoryStorage(),limits:{fileSize:20*1024*1024,files:10},fileFilter:(_,f,cb)=>cb(null,/^(image\/(jpeg|png|webp|avif)|video\/(mp4|webm))$/i.test(f.mimetype))});
 function wantsJson(req){return req.xhr||(req.get('accept')||'').includes('application/json')}
 function countLegacy(post){return {likes:Math.max(Number(post.likeCount||0),post.likes?.length||0),comments:Math.max(Number(post.commentCount||0),post.comments?.length||0)}}
 async function canAccessPost(user,post){
-  if(!post)return false;const authorId=post.author?._id||post.author;if(!authorId)return false;
+  if(!post||!isActive(post)||post.isHidden||post.status!=='published')return false;const authorId=post.author?._id||post.author;if(!authorId)return false;
   let isPrivate=typeof post.author==='object'&&post.author!==null&&Object.prototype.hasOwnProperty.call(post.author,'isPrivate')?!!post.author.isPrivate:null;
   if(isPrivate===null){const a=await User.findById(authorId).select('isPrivate').lean();if(!a)return false;isPrivate=!!a.isPrivate}
   if(!isPrivate)return true;if(user&&String(user._id)===String(authorId))return true;if(!user)return false;
@@ -19,7 +19,7 @@ router.post('/create',requireAuth,upload.array('images',10),async(req,res)=>{try
   const uploaded=[];for(const f of files)uploaded.push(await uploadFile(f,'posts',{maxEdge:1800,quality:84}));
   const caption=String(req.body.caption||'').trim().slice(0,2200);const tags=String(req.body.tags||'').split(/[ ,#]+/).map(x=>x.trim().toLowerCase()).filter(Boolean).slice(0,20);const mentionedUsers=await resolveMentions(caption);
   const media=uploaded.map(x=>({url:x.url,key:x.key,type:x.type==='video'?'video':'image',width:x.width||0,height:x.height||0,thumbUrl:x.thumbUrl||'',thumbKey:x.thumbKey||''}));
-  const post=await Post.create({author:req.currentUser._id,caption,imageUrl:media[0].url,imageKey:media[0].key,media,tags,mentions:mentionedUsers.map(u=>u._id),likeCount:0,commentCount:0});
+  const post=await Post.create({author:req.currentUser._id,caption,imageUrl:media[0].url,imageKey:media[0].key,media,tags,mentions:mentionedUsers.map(u=>u._id),expiresAt:expirationForPublish(),likeCount:0,commentCount:0});
   await User.findByIdAndUpdate(req.currentUser._id,{$inc:{postCount:1}}).catch(()=>{});
   await Promise.all(mentionedUsers.filter(u=>String(u._id)!==String(req.currentUser._id)).map(u=>createNotification({user:u._id,actor:req.currentUser._id,type:'mention',post:post._id,text:`@${req.currentUser.username} sizni postda belgiladi.`})));
   res.redirect('/p/'+post._id);
