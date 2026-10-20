@@ -118,7 +118,8 @@ async function cleanupFresh(){
   }finally{running=false}
 }
 function startFreshCleanup(){
-  if(process.env.FRESH_POSTS_ENABLED!=='true'&&process.env.FRESH_MESSAGES_ENABLED!=='true'&&process.env.FRESH_STORY_PURGE_ENABLED!=='true')return;
+  // Keep running even if the feature flag is later disabled: already stamped
+  // expirations still require R2 + Mongo cleanup.
   // An expired record is hidden from reads immediately; worker removes R2 + DB in batches.
   cleanupFresh().catch(e=>console.error('Lumi Fresh cleanup:',e.message));
   const mins=Math.max(1,Number(process.env.FRESH_CLEANUP_MINUTES||5));
