@@ -70,7 +70,7 @@
     else if (m.text) content += `<p class="message-text">${esc(m.text)}</p>`;
     const time = new Date(m.createdAt).toLocaleTimeString('uz-UZ', {hour:'2-digit',minute:'2-digit'});
     const actions = `<div class="reaction-picker">${['❤️','😂','🔥','😮','👍'].map(e => `<button type="button" data-live-message-react="${e}" data-conversation="${esc(conversationId)}" data-message="${esc(m.id)}">${e}</button>`).join('')}<button type="button" data-message-reply="${esc(m.id)}" data-message-preview="${esc((m.text||'Media').slice(0,80))}"><i data-lucide="reply"></i></button><button type="button" data-message-pin="${esc(m.id)}"><i data-lucide="pin"></i></button>${mine&&!m.deleted?`<button type="button" data-message-edit="${esc(m.id)}" data-message-text="${esc(m.text||'')}"><i data-lucide="pencil"></i></button><button type="button" data-message-delete="${esc(m.id)}"><i data-lucide="trash-2"></i></button>`:''}</div>`;
-    return `<div class="message-wrap ${mine ? 'mine':'theirs'}" data-message-wrap data-message-id="${esc(m.id)}" data-created-at="${esc(m.createdAt)}"><div class="message-bubble ${m.ephemeral ? 'ephemeral-message':''}">${content}<small class="message-time">${esc(time)}${m.edited?' · tahrirlangan':''}</small><div class="message-reactions" data-message-reactions>${reactionHtml(m.reactionCounts)}</div>${actions}</div></div>`;
+    return `<div class="message-wrap ${mine ? 'mine':'theirs'}" data-message-wrap data-message-id="${esc(m.id)}" data-created-at="${esc(m.createdAt)}" data-expires-at="${esc(m.expiresAt||'')}"><div class="message-bubble ${m.ephemeral ? 'ephemeral-message':''}">${content}<small class="message-time">${esc(time)}${m.edited?' · tahrirlangan':''}</small><div class="message-reactions" data-message-reactions>${reactionHtml(m.reactionCounts)}</div>${actions}</div></div>`;
   }
 
   async function fetchAndAppendMessage(messageId) {
@@ -335,7 +335,7 @@ document.addEventListener('DOMContentLoaded',()=>{
       const temp=document.createElement('div');
       for(const m of d.messages){
         const mine=String(m.senderId)===String(document.body.dataset.currentUserId);
-        const wrap=document.createElement('div');wrap.className=`message-wrap ${mine?'mine':'theirs'}`;wrap.dataset.messageWrap='';wrap.dataset.messageId=m.id;wrap.dataset.createdAt=m.createdAt;
+        const wrap=document.createElement('div');wrap.className=`message-wrap ${mine?'mine':'theirs'}`;wrap.dataset.messageWrap='';wrap.dataset.messageId=m.id;wrap.dataset.createdAt=m.createdAt;wrap.dataset.expiresAt=m.expiresAt||'';
         let body='';if(m.replyTo)body+=`<div class="reply-quote">${esc(m.replyTo.text||'Media')}</div>`;
         if(m.post)body+=`<a class="shared-post" href="/p/${esc(m.post.id||'')}"><img src="${esc(m.post.imageUrl||'')}"><div><strong>@${esc(m.post.authorUsername||'user')}</strong><p>${esc(m.post.caption||'')}</p></div></a>`;
         if(m.media)body+=m.media.type==='image'?`<img class="chat-media-image" src="${esc(m.media.url)}">`:m.media.type==='video'?`<video class="chat-media-video" src="${esc(m.media.url)}" controls></video>`:m.media.type==='audio'?`<audio class="chat-media-audio" src="${esc(m.media.url)}" controls></audio>`:`<a class="chat-file" href="${esc(m.media.url)}">${esc(m.media.name||'Fayl')}</a>`;
