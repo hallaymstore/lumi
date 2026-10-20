@@ -7,7 +7,8 @@ function activeQuery(query={},now=new Date()){
   return {...query,$and:[...(query.$and||[]),{$or:[{expiresAt:null},{expiresAt:{$gt:now}}]}]};
 }
 function publishedQuery(query={},now=new Date()){
-  return activeQuery({...query,status:'published',isHidden:false},now);
+  // Legacy posts written before status was added may not have a stored status.
+  return activeQuery({...query,status:{$in:['published',null]},isHidden:false},now);
 }
 function isActive(post,now=new Date()){
   return !!post&&(!post.expiresAt||new Date(post.expiresAt)>now);
