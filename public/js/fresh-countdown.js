@@ -1,6 +1,9 @@
 // Fresh post remaining-time indicator, synced with the server's absolute expiry.
 (function(){
   function update(){
+    document.querySelectorAll('[data-message-wrap][data-expires-at]').forEach(function(el){
+      const value=el.getAttribute('data-expires-at');if(value&&Date.parse(value)<=Date.now())el.remove();
+    });
     document.querySelectorAll('[data-fresh-until]').forEach(function(el){
       const deadline=Date.parse(el.getAttribute('data-fresh-until')||'');
       if(!Number.isFinite(deadline))return;
