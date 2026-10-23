@@ -27,3 +27,10 @@ test('Polish CSS comes after legacy CSS and reserves navbar space',()=>{
  assert.ok(h.lastIndexOf('/css/lumi-ui-fixes-v14.css')>h.lastIndexOf('/css/lumi-clips.css'));
  assert.match(c,/\.lumi-clips-page \.lumi-clips-list/);assert.match(c,/\.comments-sheet/);
 });
+
+test('Clips like count updates with shared AJAX and authenticated share list is provided',()=>{
+ const c=read('views/clips/index.ejs'),route=read('routes/clips.js');
+ assert.match(c,/data-like-count/);
+ assert.match(c,/postsheets',\{shareTargets\}/);
+ assert.match(route,/getShareTargets\(req\.currentUser\._id,30\)/);
+});

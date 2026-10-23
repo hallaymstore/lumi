@@ -16,7 +16,7 @@
    c.classList.toggle('is-playing',!v.paused&&!v.ended);
    if(label)label.textContent=displayTime(v.currentTime)+' / '+displayTime(v.duration);
    if(seek)seek.value=Number.isFinite(v.duration)&&v.duration>0?Math.round(v.currentTime/v.duration*1000):0;
-   const mute=c.querySelector('[data-clip-mute]');if(mute)mute.title=v.muted?'Ovozni yoqish':'Ovozni o‘chirish';
+   const mute=c.querySelector('[data-clip-mute]');if(mute){mute.title=v.muted?'Ovozni yoqish':'Ovozni o‘chirish';const key=v.muted?'volume-x':'volume-2';if(mute.dataset.lumiIcon!==key){mute.dataset.lumiIcon=key;mute.innerHTML='<i data-lucide="'+key+'"></i>';window.lucide?.createIcons()}}
   }
   async function activate(c,force=false){
    if(current&&current!==c)current.querySelector('video').pause();
@@ -37,8 +37,7 @@
    video.addEventListener('error',()=>{c.querySelector('[data-clip-buffer]').hidden=true});
    seek?.addEventListener('input',()=>{if(Number.isFinite(video.duration)&&video.duration>0)video.currentTime=video.duration*Number(seek.value)/1000});
    c.querySelector('[data-clip-mute]')?.addEventListener('click',()=>{
-     muted=!muted;cards.forEach(x=>{x.querySelector('video').muted=muted});update(c);
-     const icon=c.querySelector('[data-clip-mute]');icon.innerHTML=muted?'<i data-lucide="volume-x"></i>':'<i data-lucide="volume-2"></i>';window.lucide?.createIcons();
+     muted=!muted;cards.forEach(x=>{x.querySelector('video').muted=muted;update(x)});
    });
    c.querySelector('[data-clip-cc]')?.addEventListener('click',()=>captions(c,!c.classList.contains('captions-on')));
    c.querySelector('[data-clip-speed]')?.addEventListener('click',()=>{video.playbackRate=video.playbackRate===1?1.5:video.playbackRate===1.5?2:1;c.querySelector('[data-speed-value]').textContent=video.playbackRate+'×'});

@@ -8,6 +8,7 @@ const UserRelation=require('../models/UserRelation');
 const {publishedQuery}=require('../services/freshPosts');
 const {decoratePosts}=require('../utils/socialState');
 const {linkifyMentions}=require('../utils/mentions');
+const {getShareTargets}=require('../utils/socialUi');
 router.get('/api/clips/caption/:postId',async(req,res)=>{
  if(!mongoose.isValidObjectId(req.params.postId))return res.sendStatus(404);
  const i=Number(req.query.i||0);if(!Number.isInteger(i)||i<0||i>9)return res.sendStatus(404);
@@ -47,8 +48,9 @@ router.get('/clips',async(req,res,next)=>{
   const clips=posts.map(p=>({...p,video:(p.media||[]).find(m=>m.type==='video'),captionHtml:linkifyMentions(p.caption||'')})).filter(p=>p.video);
   const last=rows[rows.length-1];
   const nextUrl=rows.length===45&&last?'/clips?before='+encodeURIComponent(new Date(last.createdAt).toISOString()):'';
+  const shareTargets=req.currentUser?await getShareTargets(req.currentUser._id,30):[];
   res.set('Cache-Control','no-store');
-  res.render('clips/index',{title:'Lumi Clips',clips,nextUrl,metaDescription:'Lumi Clips — tezkor vertikal videolar va ijodkorlar.'});
+  res.render('clips/index',{title:'Lumi Clips',clips,shareTargets,nextUrl,metaDescription:'Lumi Clips — tezkor vertikal videolar va ijodkorlar.'});
  }catch(err){next(err)}
 });
 module.exports=router;
