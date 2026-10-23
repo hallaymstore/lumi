@@ -1,0 +1,18 @@
+<%- include('../partials/head') %><%- include('../partials/topbar') %>
+<main class="content creator-program-page">
+ <section class="card pro-hero"><div><span class="settings-kicker">LUMI CREATOR STUDIO</span><h1>Lumi <em>Pro</em> ✦</h1><p>Ijodkorlar uchun kengaytirilgan profil, analitika va video vositalari.</p></div><span class="pro-state <%=proActive?'active':''%>"><%=proActive?'✓ Pro faol':'Pro faollashtirilmagan'%></span></section>
+ <%if(ok){%><div class="success-alert"><%=ok%></div><%}%><%if(error){%><div class="alert"><%=error%></div><%}%>
+ <section class="pro-feature-grid">
+  <%[['badge-check','Pro profil','Premium belgi va shaxsiy ranglar'],['chart-no-axes-combined','90 kun analitika','Tasdiqlangan ko‘rishlar dinamikasi'],['link','Creator havolasi','Portfolio yoki shaxsiy sayt'],['film','150 MB video','Kengaytirilgan stream upload']].forEach(x=>{%><article class="card pro-feature"><i data-lucide="<%=x[0]%>"></i><b><%=x[1]%></b><small><%=x[2]%></small></article><%})%>
+ </section>
+ <%if(proActive){%><section class="card creator-panel"><div class="program-section-title"><h2>Pro · 90 kunlik statistika</h2><a class="btn ghost compact" href="/settings">Ko‘rinishni sozlash</a></div><div class="program-history"><%if(!daily.length){%><p class="muted">Hali hisoblangan statistikalar yo‘q.</p><%}%><%daily.slice(-30).forEach(d=>{%><div><span><%=d.day%></span><b><%=d.qualifiedViews||0%> view</b><small><%=d.originalPosts||0%> post</small></div><%})%></div></section><%}else{%><p class="muted pro-caption">Pro sinov rejimida admin orqali faollashtiriladi; to‘lov va obuna xaridi tizimi ulanmagan.</p><%}%>
+ <section class="card creator-panel" id="monetization">
+  <div class="program-section-title"><div><span class="settings-kicker">CREATOR MONETIZATION</span><h2>Monetizatsiyaga kirish talablari</h2></div><span class="program-status <%=application?.status||'not-applied'%>"><%=application?.status==='pending'?'Ko‘rib chiqilmoqda':application?.status==='approved'?'Qabul qilingan':application?.status==='rejected'?'Rad etilgan':'Ariza yo‘q'%></span></div>
+  <p class="muted">Sintetik profillar, virtual obunachilar va sun’iy ko‘rishlar hisoblanmaydi. Faqat real, telefon tasdiqlangan akkauntlarning yangi va noyob post ko‘rishlari mezonga kiradi.</p>
+  <div class="program-rules"><%eligibility.rules.forEach(rule=>{%><div class="program-rule <%=rule.passed?'passed':'missing'%>"><i data-lucide="<%=rule.passed?'check-circle-2':'circle'%>"></i><span><b><%=rule.title%></b><small><%=rule.value%></small></span></div><%})%></div>
+  <%if(application?.note){%><p class="muted">Moderator izohi: <%=application.note%></p><%}%>
+  <%if(eligibility.eligible&&!['pending','approved'].includes(application?.status||'')){%><form class="program-apply" method="post" action="/creator/program/apply"><label><input type="checkbox" name="originalContent" required> Kontentim original va boshqa shaxs huquqlarini buzmaydi.</label><label><input type="checkbox" name="acceptPolicy" required> Dastur qoidalari va tekshiruvga roziman.</label><button class="btn primary">Ariza yuborish</button></form><%}else if(!eligibility.eligible){%><div class="program-hint">Hozircha ariza berish uchun barcha talablarni bajaring.</div><%}%>
+  <p class="muted tiny">Qabul qilinish pul ishlash yoki pul yechish huquqini avtomatik bermaydi. Daromad to‘lov provayderi, hisob-kitob va qonuniy shartlar to‘liq ishga tushirilgandan keyin joriy etiladi.</p>
+ </section>
+ <a class="btn ghost" href="/creator/analytics">Creator Analytics</a>
+</main><%- include('../partials/footer') %>
