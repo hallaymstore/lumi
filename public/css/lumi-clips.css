@@ -45,3 +45,19 @@
 .lumi-clips-empty p{font-size:12px}
 @media(max-width:650px){.lumi-clips-page{padding:0 0 68px}.lumi-clips-heading{height:35px;padding:0 9px}.lumi-clips-help{display:none}.lumi-clips-list{width:100%;max-width:420px;height:calc(100svh - 150px);border-radius:0;min-height:330px}.lumi-clip-stage{border-radius:0}.lumi-clip-overlay{padding:65px 10px 9px}.lumi-clip-actions{bottom:82px;right:7px;gap:9px}.lumi-clip-controlstrip{gap:4px}.lumi-clip-time{font-size:9px}.lumi-clip-controlstrip button{min-width:25px;height:25px}.lumi-clip-description{font-size:11px}.lumi-clip-author{margin-bottom:5px}}
 @media(prefers-reduced-motion:reduce){.lumi-clip-center{transition:none}.lumi-clip-buffer svg{animation:none}}
+
+/* Premium feed and composer finishing */
+.lumi-video-speed{font-size:10px;font-weight:800}
+.lumi-video-controls{gap:5px!important}
+.lumi-video-controls button:disabled{opacity:.35}
+.lumi-video-media::cue{background:rgba(0,0,0,.7);font-size:16px}
+.clip-upload-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 12px;font-size:13px;font-weight:800}
+.clip-upload-heading span{display:flex;align-items:center;gap:7px}
+.clip-upload-heading svg{width:17px;height:17px}
+.clip-upload-heading a{font-size:11px;text-decoration:none;color:var(--primary)}
+.clip-upload-info{display:flex;gap:8px;align-items:center;padding:10px;border-radius:11px;background:var(--surface2);font-size:11px;color:var(--muted);margin:10px 0}
+.clip-upload-info svg{width:16px;height:16px;flex-shrink:0}
+.clip-caption-row{display:grid;grid-template-columns:minmax(0,1fr) 135px;gap:8px;margin:10px 0}
+.clip-caption-row label{display:grid;gap:5px;font-size:11px;font-weight:700}
+.clip-caption-row input,.clip-caption-row select{min-width:0;width:100%;max-width:100%;font-size:11px;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--surface)}
+@media(max-width:650px){.clip-caption-row{grid-template-columns:minmax(0,1fr) 96px}.clip-upload-heading{font-size:12px}.lumi-video-control[data-video-pip]{display:none}}

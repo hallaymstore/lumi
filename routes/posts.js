@@ -13,7 +13,7 @@ async function canAccessPost(user,post){
   return !!(await Follow.exists({follower:user._id,following:authorId,status:'accepted'}));
 }
 
-router.get('/create',requireAuth,(req,res)=>res.render('posts/create',{title:'Yangi post',error:null}));
+router.get('/create',requireAuth,(req,res)=>res.render('posts/create',{title:req.query.type==='clip'?'Yangi Lumi Clip':'Yangi post',error:null,isClip:req.query.type==='clip'}));
 router.post('/create',requireAuth,upload.array('images',10),async(req,res)=>{try{
   const files=req.files||[];if(!files.length)throw new Error('Kamida bitta rasm yoki video tanlang.');
   const uploaded=[];for(const f of files)uploaded.push(await uploadFile(f,'posts',{maxEdge:1800,quality:84}));

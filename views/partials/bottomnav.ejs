@@ -2,7 +2,7 @@
 <% if (!isChatDetail && !hideNav) { %>
 <nav class="bottom-nav glass bottom-nav-v15" aria-label="Asosiy navigatsiya">
   <a class="nav-item <%= path === '/feed' ? 'active' : '' %>" href="/feed" data-feed-refresh><i data-lucide="house"></i><span>Feed</span></a>
-  <a class="nav-item <%= path === '/explore' ? 'active' : '' %>" href="/explore"><i data-lucide="search"></i><span>Qidiruv</span></a>
+  <a class="nav-item <%= path.startsWith('/clips') ? 'active' : '' %>" href="/clips"><i data-lucide="clapperboard"></i><span>Clips</span></a>
 
   <button type="button" class="nav-create <%= (path === '/posts/create' || path === '/stories/create') ? 'active' : '' %>" <%= currentUser ? 'data-create-menu-toggle' : 'data-auth-required' %> aria-label="Yaratish" aria-expanded="false">
     <i data-lucide="plus"></i>
@@ -18,6 +18,7 @@
     <div class="create-popover-head"><div><small>YARATISH</small><strong>Nima ulashamiz?</strong></div><button type="button" class="create-popover-close" data-create-menu-close aria-label="Yopish"><i data-lucide="x"></i></button></div>
     <div class="create-popover-options">
       <a href="/posts/create" class="create-option create-option-post"><span class="create-option-icon"><i data-lucide="image-plus"></i></span><span class="create-option-copy"><strong>Post</strong><small>Rasm, matn va @mention</small></span><i data-lucide="chevron-right" class="create-option-arrow"></i></a>
+      <a href="/posts/create?type=clip" class="create-option"><span class="create-option-icon"><i data-lucide="clapperboard"></i></span><span class="create-option-copy"><strong>Lumi Clip</strong><small>9:16 video va subtitr</small></span><i data-lucide="chevron-right" class="create-option-arrow"></i></a>
       <a href="/stories/create" class="create-option create-option-story"><span class="create-option-icon"><i data-lucide="circle-play"></i></span><span class="create-option-copy"><strong>Story</strong><small>24 soatlik tezkor ulashuv</small></span><i data-lucide="chevron-right" class="create-option-arrow"></i></a>
       <button type="button" class="create-option create-option-live" disabled aria-disabled="true"><span class="create-option-icon"><i data-lucide="radio"></i></span><span class="create-option-copy"><strong>Live</strong><small>Jonli efir keyingi bosqichda</small></span><span class="create-soon">Tez orada</span></button>
     </div>

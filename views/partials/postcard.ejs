@@ -7,13 +7,16 @@
     <% media.forEach((m,idx)=>{ %>
       <% if(m.type==='video'){ %>
         <div class="post-image-wrap lumi-video-player" data-lumi-video data-video-post="<%=p._id%>">
-          <video class="post-image lumi-video-media" src="<%=m.url%>" muted playsinline preload="metadata" loop aria-label="@<%=p.author.username%> videosi"></video>
+          <video class="post-image lumi-video-media" data-video-src="<%=m.playbackUrl||m.url%>" poster="<%=m.posterUrl||m.thumbUrl||''%>" muted playsinline preload="none" loop aria-label="@<%=p.author.username%> videosi"><%if(m.captionsUrl){%><track kind="captions" label="Subtitr" srclang="<%=m.captionsLang||'uz'%>" src="<%=m.captionsUrl%>"><%}%></video>
           <button type="button" class="lumi-video-bigplay" data-video-toggle aria-label="Videoni o‘ynatish"><i data-lucide="play"></i></button>
           <div class="lumi-video-controls" aria-label="Video boshqaruvi">
             <button class="lumi-video-control lumi-video-toggle" type="button" data-video-toggle aria-label="Pauza yoki ijro"><i class="lumi-play-icon" data-lucide="play"></i><i class="lumi-pause-icon" data-lucide="pause"></i></button>
             <span class="lumi-video-time" data-video-time>0:00</span>
             <input class="lumi-video-seek" type="range" min="0" max="1000" value="0" step="1" data-video-seek aria-label="Videoni oldinga yoki orqaga surish">
             <button class="lumi-video-control lumi-video-mute" type="button" data-video-mute aria-label="Ovoz"><i class="lumi-sound-off" data-lucide="volume-x"></i><i class="lumi-sound-on" data-lucide="volume-2"></i></button>
+            <button class="lumi-video-control" type="button" data-video-captions <%=m.captionsUrl?'':'disabled'%> aria-label="Subtitr"><i data-lucide="captions"></i></button>
+            <button class="lumi-video-control lumi-video-speed" type="button" data-video-speed aria-label="Ijro tezligi">1×</button>
+            <button class="lumi-video-control" type="button" data-video-pip aria-label="Mini pleyer"><i data-lucide="picture-in-picture-2"></i></button>
             <button class="lumi-video-control" type="button" data-video-fullscreen aria-label="To‘liq ekran"><i data-lucide="maximize"></i></button>
           </div>
         </div>
