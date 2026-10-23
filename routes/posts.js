@@ -18,7 +18,7 @@ router.post('/create',requireAuth,upload.array('images',10),async(req,res)=>{try
   const files=req.files||[];if(!files.length)throw new Error('Kamida bitta rasm yoki video tanlang.');
   const uploaded=[];for(const f of files)uploaded.push(await uploadFile(f,'posts',{maxEdge:1800,quality:84}));
   const caption=String(req.body.caption||'').trim().slice(0,2200);const tags=String(req.body.tags||'').split(/[ ,#]+/).map(x=>x.trim().toLowerCase()).filter(Boolean).slice(0,20);const mentionedUsers=await resolveMentions(caption);
-  const media=uploaded.map(x=>({url:x.url,key:x.key,type:x.type==='video'?'video':'image',width:x.width||0,height:x.height||0,thumbUrl:x.thumbUrl||'',thumbKey:x.thumbKey||''}));
+  const media=uploaded.map(x=>({url:x.url,key:x.key,type:x.type==='video'?'video':'image',width:x.width||0,height:x.height||0,thumbUrl:x.thumbUrl||'',thumbKey:x.thumbKey||'',duration:x.duration||0}));
   const post=await Post.create({author:req.currentUser._id,caption,imageUrl:media[0].url,imageKey:media[0].key,media,tags,mentions:mentionedUsers.map(u=>u._id),expiresAt:expirationForPublish(),likeCount:0,commentCount:0});
   recordCreatorMetric(req.currentUser._id,'originalPosts').catch(()=>{});await User.findByIdAndUpdate(req.currentUser._id,{$inc:{postCount:1}}).catch(()=>{});
   await Promise.all(mentionedUsers.filter(u=>String(u._id)!==String(req.currentUser._id)).map(u=>createNotification({user:u._id,actor:req.currentUser._id,type:'mention',post:post._id,text:`@${req.currentUser.username} sizni postda belgiladi.`})));

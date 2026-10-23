@@ -142,22 +142,19 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Persistent post like without a page refresh.
-  document.querySelectorAll('.ajax-like-form').forEach(form => {
-    form.addEventListener('submit', async e => {
-      e.preventDefault();
-      const btn = form.querySelector('button');
-      btn.disabled = true;
-      try {
-        const r = await fetch(form.action, { method: 'POST', headers: { Accept: 'application/json' } });
-        const data = await r.json();
-        if (data.ok) {
-          btn.classList.toggle('liked', data.liked);
-          const card = form.closest('[data-post-id]');
-          const count = card?.querySelector('[data-like-count]');
-          if (count) count.textContent = data.count;
-        }
-      } finally { btn.disabled = false; }
-    });
+  document.addEventListener('submit', async e=>{
+    const form=e.target.closest('.ajax-like-form');if(!form)return;
+    e.preventDefault();const btn=form.querySelector('button');if(!btn)return;
+    btn.disabled=true;
+    try{
+      const r=await fetch(form.action,{method:'POST',headers:{Accept:'application/json'}});
+      const data=await r.json().catch(()=>({}));
+      if(data.ok){
+        btn.classList.toggle('liked',data.liked);
+        const card=form.closest('[data-post-id]');
+        card?.querySelectorAll('[data-like-count]').forEach(el=>el.textContent=data.count);
+      }
+    }finally{btn.disabled=false}
   });
 
   // Comments bottom sheet: lazy-load so long discussions never stretch the post card.
@@ -203,14 +200,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (replyLabel) replyLabel.textContent = '';
   }
 
-  document.querySelectorAll('[data-comments-open]').forEach(btn => btn.addEventListener('click', async () => {
+  document.addEventListener('click', async e => {
+    const btn=e.target.closest('[data-comments-open]');if(!btn)return;
     if (commentPostId === btn.dataset.commentsOpen && commentsSheet && !commentsSheet.hidden && commentsSheet.classList.contains('open')) { closeSheet(commentsSheet); return; }
     commentPostId = btn.dataset.commentsOpen;
     clearReply();
     openSheet(commentsSheet);
     await loadComments();
     setTimeout(() => commentForm?.querySelector('input[name="text"]')?.focus(), 100);
-  }));
+  });
 
   commentsList?.addEventListener('click', async e => {
     const replyBtn = e.target.closest('[data-reply-to]');
@@ -275,11 +273,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const shareSheet = document.querySelector('[data-share-sheet]');
   const shareSuccess = shareSheet?.querySelector('[data-share-success]');
   let sharePostId = null;
-  document.querySelectorAll('[data-share-open]').forEach(btn => btn.addEventListener('click', () => {
+  document.addEventListener('click', e=>{
+    const btn=e.target.closest('[data-share-open]');if(!btn)return;
     sharePostId = btn.dataset.shareOpen;
     if (shareSuccess) shareSuccess.hidden = true;
     openSheet(shareSheet);
-  }));
+  });
 
   const postShareUrl = () => sharePostId ? `${location.origin}/p/${sharePostId}` : location.href;
   const sharedCounted=new Set(); const countShare=()=>{if(!sharePostId||sharedCounted.has(sharePostId))return;sharedCounted.add(sharePostId);fetch(`/posts/${sharePostId}/share-event`,{method:'POST',headers:{Accept:'application/json'},keepalive:true}).catch(()=>{})};

@@ -8,7 +8,7 @@ const SavedPost=require('../models/SavedPost');
 const {linkifyMentions}=require('../utils/mentions');
 
 // Explicit actions are intentionally much stronger than passive impressions.
-const W={impression:-0.08,view:0.35,dwell:0.018,like:4.5,unlike:-3.5,comment:6.5,save:8,unsave:-5,share:9,open_comments:2.4,profile_visit:3.2,not_interested:-30,hide_author:-60};
+const W={impression:-0.08,view:0.35,dwell:0.018,like:4.5,unlike:-3.5,comment:6.5,save:8,unsave:-5,share:9,open_comments:2.4,profile_visit:3.2,not_interested:-30,hide_author:-60,clip_watch:0.44,clip_skip:-8,clip_complete:11};
 function uniqById(rows){const m=new Map();for(const p of rows||[]){if(p?._id)m.set(String(p._id),p)}return [...m.values()]}
 function ageHours(d){return Math.max(0,(Date.now()-new Date(d).getTime())/36e5)}
 function engagementQuality(p){
@@ -33,7 +33,7 @@ async function userSignals(userId){
   const following=new Set(follows.map(x=>String(x.following))),authorAffinity=new Map(),tagAffinity=new Map(),seen=new Map(),hiddenPosts=new Set(),hiddenAuthors=new Set();
   for(const e of events){
     const days=(Date.now()-new Date(e.createdAt).getTime())/864e5,decay=Math.exp(-days/45);
-    const dwellMultiplier=e.type==='dwell'?Math.min(90,Math.max(0,Number(e.value)||0)):1;
+    const dwellMultiplier=['dwell','clip_watch'].includes(e.type)?Math.min(90,Math.max(0,Number(e.value)||0)):1;
     const score=(W[e.type]||0)*dwellMultiplier*decay;
     if(e.author)authorAffinity.set(String(e.author),(authorAffinity.get(String(e.author))||0)+score);
     for(const raw of e.tags||[]){const t=String(raw||'').toLowerCase();if(t)tagAffinity.set(t,(tagAffinity.get(t)||0)+score*.4)}

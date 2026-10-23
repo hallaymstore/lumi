@@ -12,7 +12,7 @@ const Story=require('../models/Story');const {expirationForPublish,publishedQuer
 const Notification=require('../models/Notification');
 const FeedEvent=require('../models/FeedEvent');
 const {requireAuth}=require('../middleware/auth');
-const {uploadStream,uploadCaption,deleteMany}=require('../services/r2');const {toVtt,clampVideoMeta}=require('../services/clipAssets');const {hasPro,recordCreatorMetric}=require('../services/creatorProgram');
+const {uploadStream,verifyUploadedVideo,uploadCaption,deleteMany}=require('../services/r2');const {toVtt,clampVideoMeta}=require('../services/clipAssets');const {hasPro,recordCreatorMetric}=require('../services/creatorProgram');
 const {resolveMentions}=require('../utils/mentions');
 const {createNotification}=require('../services/notify');
 
@@ -94,7 +94,8 @@ router.post('/api/uploads/stream',requireAuth,async(req,res)=>{
     const size=Number(req.get('content-length')||0);const max=mime.startsWith('video/')?(hasPro(req.currentUser)?150:80)*1024*1024:20*1024*1024;
     if(!size)return res.status(411).json({ok:false,error:'Fayl hajmi aniqlanmadi.'});if(purpose==='poster'&&size>2*1024*1024)return res.status(413).json({ok:false,error:'Muqova maksimum 2 MB.'});if(size>max)return res.status(413).json({ok:false,error:`Fayl juda katta. Maksimum ${Math.round(max/1024/1024)} MB.`});
     uploaded=await uploadStream(req,`posts/${req.currentUser._id}`,mime,size);
-    const payload={uid:String(req.currentUser._id),key:uploaded.key,url:uploaded.url,type:uploaded.type,purpose,size,exp:Date.now()+60*60*1000};
+    const duration=uploaded.type==='video'?await verifyUploadedVideo(uploaded.key,size,mime):0;
+    const payload={uid:String(req.currentUser._id),key:uploaded.key,url:uploaded.url,type:uploaded.type,purpose,size,duration,exp:Date.now()+60*60*1000};
     res.json({ok:true,token:signPayload(payload),media:{url:uploaded.url,type:uploaded.type,size}});
   }catch(e){if(uploaded?.key)deleteMany([uploaded.key]).catch(()=>{});res.status(400).json({ok:false,error:e.message||'Media yuklanmadi.'})}
 });
@@ -116,7 +117,8 @@ router.post('/posts/create-streamed',requireAuth,async(req,res)=>{
     const verified=tokens.map(t=>verifyPayload(t,req.currentUser._id));
     if(verified.some(t=>t.purpose&&t.purpose!=='media'||!['image','video'].includes(t.type)))throw new Error('Media token turi noto‘g‘ri.');
     if(req.body.clipMode==='1'&&(verified.length!==1||verified[0].type!=='video'))throw new Error('Clip uchun aynan bitta video kerak.');
-    media=verified.map(x=>({url:x.url,key:x.key,type:x.type,width:0,height:0,thumbUrl:'',thumbKey:''}));
+    if(verified.some(x=>x.type==='video'&&(!Number.isFinite(x.duration)||x.duration<=0||x.duration>30)))throw new Error('Videolar maksimum 30 soniya bo‘lishi kerak.');
+    media=verified.map(x=>({url:x.url,key:x.key,type:x.type,width:0,height:0,duration:x.type==='video'?x.duration:0,thumbUrl:'',thumbKey:''}));
     let extras=[];try{extras=JSON.parse(String(req.body.mediaExtras||'[]'))}catch{throw new Error('Video ma’lumoti buzilgan.')}
     if(!Array.isArray(extras)||extras.length>10)throw new Error('Video ma’lumoti juda ko‘p.');
     const used=new Set();
@@ -124,7 +126,7 @@ router.post('/posts/create-streamed',requireAuth,async(req,res)=>{
      const idx=Number(info?.index);
      if(!Number.isInteger(idx)||idx<0||idx>=media.length||used.has(idx)||media[idx].type!=='video')throw new Error('Video raqami noto‘g‘ri.');
      used.add(idx);
-     Object.assign(media[idx],clampVideoMeta(info));
+     const safe=clampVideoMeta(info);media[idx].width=safe.width;media[idx].height=safe.height;
      if(info.posterToken){
       const cover=verifyPayload(info.posterToken,req.currentUser._id);
       if(cover.purpose!=='poster'||cover.type!=='image'||Number(cover.size)>2*1024*1024)throw new Error('Muqova tokeni noto‘g‘ri.');
@@ -138,7 +140,7 @@ router.post('/posts/create-streamed',requireAuth,async(req,res)=>{
       media[idx].captionsLang=['uz','ru','en'].includes(info.captionsLang)?info.captionsLang:'uz';
      }
     }
-    if(req.body.clipMode==='1'&&media[0].duration>180)throw new Error('Clip 3 daqiqadan oshmasligi kerak.');
+    if(media.some(m=>m.type==='video'&&m.duration>30))throw new Error('Video 30 soniyadan oshmasligi kerak.');
     const intent=req.body.intent==='draft'?'draft':'publish';const caption=String(req.body.caption||'').trim().slice(0,2200);if(intent==='publish'&&!media.length)throw new Error('Post uchun kamida bitta media kerak.');if(intent==='draft'&&!caption&&!media.length)throw new Error('Qoralama uchun caption yoki media kiriting.');
     const tags=cleanTags(req.body.tags),mentionedUsers=await resolveMentions(caption);const isDraft=intent==='draft';
     const post=await Post.create({author:req.currentUser._id,caption,imageUrl:media[0]?.url||'',imageKey:media[0]?.key||'',media,tags,mentions:mentionedUsers.map(u=>u._id),status:isDraft?'draft':'published',isHidden:isDraft,draftSavedAt:isDraft?new Date():null,expiresAt:isDraft?null:expirationForPublish(),likeCount:0,commentCount:0});

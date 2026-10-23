@@ -20,7 +20,7 @@ const upload=multer({
 function cleanTags(raw){return String(raw||'').split(/[ ,#]+/).map(x=>x.trim().toLowerCase()).filter(Boolean).slice(0,20)}
 function mediaKeys(post){return [post.imageKey,...(post.media||[]).flatMap(m=>[m.key,m.thumbKey,m.posterKey,m.captionsKey,m.playbackKey])].filter(Boolean)}
 async function ownPost(req){const post=await Post.findOne({_id:req.params.id,author:req.currentUser._id});return isActive(post)?post:null}
-async function uploadMedia(files){const out=[];for(const f of files||[])out.push(await uploadFile(f,'posts',{maxEdge:1800,quality:84}));return out.map(x=>({url:x.url,key:x.key,type:x.type==='video'?'video':'image',width:x.width||0,height:x.height||0,thumbUrl:x.thumbUrl||'',thumbKey:x.thumbKey||''}))}
+async function uploadMedia(files){const out=[];for(const f of files||[])out.push(await uploadFile(f,'posts',{maxEdge:1800,quality:84}));return out.map(x=>({url:x.url,key:x.key,type:x.type==='video'?'video':'image',width:x.width||0,height:x.height||0,thumbUrl:x.thumbUrl||'',thumbKey:x.thumbKey||'',duration:x.duration||0}))}
 async function adjustPublishedCount(userId,delta){if(delta<0)return User.updateOne({_id:userId,postCount:{$gt:0}},{$inc:{postCount:-1}}).catch(()=>{});return User.updateOne({_id:userId},{$inc:{postCount:1}}).catch(()=>{})}
 
 router.post('/create-draft',requireAuth,upload.array('images',10),async(req,res)=>{try{

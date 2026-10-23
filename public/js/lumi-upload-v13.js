@@ -63,8 +63,8 @@
     let extra=null;
     if(video){
      progress(Math.round(i/files.length*90),'Video tekshirilmoqda…');
-     try{extra=await meta(f)}catch(err){console.warn('Video metadata fallback:',err.message);extra={width:0,height:0,duration:0}}
-     if(mode&&extra.duration>180)throw Error('Lumi Clip maksimum 3 daqiqa davom etishi mumkin.');
+     try{extra=await meta(f)}catch(err){throw Error('Video davomiyligi aniqlanmadi. 30 soniyagacha MP4 yoki WebM fayl tanlang.')}
+     if(!Number.isFinite(extra.duration)||extra.duration<=0||extra.duration>30)throw Error('Video maksimum 30 soniya bo‘lishi kerak. Davomiyligi aniqlanmagan videoni MP4 formatda qayta saqlang.');
      if(extra.width>1920||extra.height>1920)console.warn('1080p dan katta video sekinroq yuklanishi mumkin.');
     }
     progress(Math.round(i/files.length*90),String(i+1)+'/'+files.length+': '+f.name);

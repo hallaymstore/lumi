@@ -23,34 +23,67 @@ router.get('/api/clips/caption/:postId',async(req,res)=>{
   res.set('Cache-Control','private, max-age=120');res.type('text/vtt').send(text);
  }catch(e){console.error('Clip caption:',e.message);res.sendStatus(404)}
 });
+const FeedEvent=require('../models/FeedEvent');
+const {requireAuth}=require('../middleware/auth');
+const {userSignals}=require('../services/feed');
+const {rankClips}=require('../services/clipRank');
+
+const AUTHOR_FIELDS='name username avatarUrl isVerified isPrivate isSuspended accountOrigin proExpiresAt';
+const MAX_SEEN=90;
+function excluded(raw){
+ return [...new Set(String(raw||'').split(',').filter(x=>/^[a-f0-9]{24}$/i.test(x)))].slice(-MAX_SEEN);
+}
+async function candidatesForClips(){
+ const base=publishedQuery({'media.type':'video'});
+ const [fresh,quality,discovery]=await Promise.all([
+  Post.find(base).sort({createdAt:-1}).limit(110).populate('author',AUTHOR_FIELDS).lean(),
+  Post.find(base).sort({qualityScore:-1,createdAt:-1}).limit(95).populate('author',AUTHOR_FIELDS).lean(),
+  Post.aggregate([{$match:base},{$sample:{size:45}}]).then(rows=>Post.populate(rows,{path:'author',select:AUTHOR_FIELDS}))
+ ]);
+ const posts=new Map();
+ for(const p of [...fresh,...quality,...discovery])if(p?._id)posts.set(String(p._id),p);
+ return [...posts.values()];
+}
+async function recommend(req,limit=8){
+ const [rows,signals]=await Promise.all([candidatesForClips(),userSignals(req.currentUser?._id)]);
+ const chosen=rankClips(rows,signals,{userId:req.currentUser?._id,limit,exclude:excluded(req.query.seen),nonce:Math.floor(Date.now()/3600000)});
+ const posts=await decoratePosts(chosen,req.currentUser?._id);
+ return posts.map(p=>({...p,video:(p.media||[]).find(m=>m.type==='video'),captionHtml:linkifyMentions(p.caption||'')})).filter(p=>p.video);
+}
+router.get('/api/clips/next',async(req,res,next)=>{
+ try{
+  const clips=await recommend(req,8);
+  res.set('Cache-Control','no-store');
+  return res.render('clips/cards',{clips},(err,html)=>err?next(err):res.json({ok:true,html,hasMore:clips.length===8}));
+ }catch(err){next(err)}
+});
+router.post('/api/clips/watch',requireAuth,async(req,res)=>{
+ try{
+  const uid=req.currentUser._id;
+  if(req.currentUser.accountOrigin==='synthetic'||req.currentUser.managedByPlatform)return res.json({ok:true,recorded:false});
+  const pid=String(req.body.postId||'');
+  if(!mongoose.isValidObjectId(pid))return res.sendStatus(400);
+  const seconds=Number(req.body.seconds),ratio=Number(req.body.ratio);
+  if(!Number.isFinite(seconds)||seconds<0||seconds>31||!Number.isFinite(ratio)||ratio<0||ratio>1)return res.sendStatus(400);
+  const post=await Post.findOne(publishedQuery({_id:pid,'media.type':'video'})).select('_id author tags').populate('author','_id isPrivate isSuspended').lean();
+  if(!post?.author||post.author.isSuspended)return res.sendStatus(404);
+  const aid=String(post.author._id);
+  if(post.author.isPrivate&&aid!==String(uid)&&!await Follow.exists({follower:uid,following:post.author._id,status:'accepted'}))return res.sendStatus(404);
+  if(await UserRelation.exists({type:'block',$or:[{owner:uid,target:post.author._id},{target:uid,owner:post.author._id}]}))return res.sendStatus(404);
+  const since=new Date(Date.now()-90000);
+  const exists=await FeedEvent.exists({user:uid,post:post._id,type:{$in:['clip_skip','clip_watch','clip_complete']},createdAt:{$gte:since}});
+  if(exists)return res.json({ok:true,recorded:false});
+  const type=(ratio>=.9&&seconds>=2)?'clip_complete':(seconds<2||ratio<.16)?'clip_skip':'clip_watch';
+  await FeedEvent.create({user:uid,post:post._id,author:post.author._id,tags:post.tags||[],type,value:Math.min(30,seconds)});
+  return res.json({ok:true,recorded:true});
+ }catch(e){console.error('Clip watch:',e.message);res.sendStatus(500)}
+});
 router.get('/clips',async(req,res,next)=>{
  try{
-  const before=typeof req.query.before==='string'&&/^\d{4}-\d\d-\d\dT/.test(req.query.before)?new Date(req.query.before):null;
-  if(before&&!Number.isFinite(+before))return res.status(400).render('error',{title:'Xato',message:'Noto‘g‘ri sana.'});
-  const base={'media.type':'video'};
-  if(before)base.createdAt={$lt:before};
-  const rows=await Post.find(publishedQuery(base)).sort({createdAt:-1,_id:-1}).limit(45)
-    .populate('author','name username avatarUrl isVerified isPrivate isSuspended accountOrigin proExpiresAt').lean();
-  const uid=req.currentUser?String(req.currentUser._id):'';
-  let following=new Set(),blocked=new Set();
-  if(uid){
-   const ids=rows.filter(p=>p.author).map(p=>p.author._id);
-   const [follows,relations]=await Promise.all([
-    Follow.find({follower:req.currentUser._id,following:{$in:ids},status:'accepted'}).select('following').lean(),
-    UserRelation.find({type:'block',$or:[{owner:req.currentUser._id,target:{$in:ids}},{target:req.currentUser._id,owner:{$in:ids}}]}).select('owner target').lean()
-   ]);
-   following=new Set(follows.map(f=>String(f.following)));
-   blocked=new Set(relations.map(r=>String(r.owner)===uid?String(r.target):String(r.owner)));
-  }
-  const permitted=rows.filter(p=>p.author&&!p.author.isSuspended&&!blocked.has(String(p.author._id))&&(!p.author.isPrivate||String(p.author._id)===uid||following.has(String(p.author._id))));
-  const chosen=permitted.slice(0,18);
-  const posts=await decoratePosts(chosen,req.currentUser?._id);
-  const clips=posts.map(p=>({...p,video:(p.media||[]).find(m=>m.type==='video'),captionHtml:linkifyMentions(p.caption||'')})).filter(p=>p.video);
-  const last=rows[rows.length-1];
-  const nextUrl=rows.length===45&&last?'/clips?before='+encodeURIComponent(new Date(last.createdAt).toISOString()):'';
+  const clips=await recommend(req,8);
   const shareTargets=req.currentUser?await getShareTargets(req.currentUser._id,30):[];
   res.set('Cache-Control','no-store');
-  res.render('clips/index',{title:'Lumi Clips',clips,shareTargets,nextUrl,metaDescription:'Lumi Clips — tezkor vertikal videolar va ijodkorlar.'});
+  res.render('clips/index',{title:'Lumi Clips',clips,shareTargets,metaDescription:'Lumi Clips — videolarni qiziqishlaringizga mos tomosha qiling.'});
  }catch(err){next(err)}
 });
 module.exports=router;

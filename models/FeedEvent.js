@@ -4,7 +4,7 @@ const schema = new mongoose.Schema({
   guestKey:{ type:String, default:'', index:true },
   post:{ type:mongoose.Schema.Types.ObjectId, ref:'Post', default:null, index:true },
   author:{ type:mongoose.Schema.Types.ObjectId, ref:'User', default:null, index:true },
-  type:{ type:String, enum:['impression','view','dwell','like','unlike','comment','save','unsave','share','open_comments','profile_visit','not_interested','hide_author'], required:true, index:true },
+  type:{ type:String, enum:['impression','view','dwell','like','unlike','comment','save','unsave','share','open_comments','profile_visit','not_interested','hide_author','clip_watch','clip_skip','clip_complete'], required:true, index:true },
   value:{ type:Number, default:1 },
   tags:[{type:String,lowercase:true,trim:true}]
 },{timestamps:true});

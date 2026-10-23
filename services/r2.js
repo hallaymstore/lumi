@@ -1,6 +1,7 @@
 const { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, ListObjectsV2Command } = require('@aws-sdk/client-s3');
 const crypto = require('crypto');
 const sharp = require('sharp');
+const {enforceVideoDuration}=require('./videoDuration');
 
 function configured(){return !!(process.env.R2_ACCOUNT_ID&&process.env.R2_ACCESS_KEY_ID&&process.env.R2_SECRET_ACCESS_KEY&&process.env.R2_BUCKET&&process.env.R2_PUBLIC_URL)}
 let _client;
@@ -35,9 +36,19 @@ async function uploadStream(stream,prefix='media',contentType='application/octet
   return {key,url:publicUrl(key),thumbKey:'',thumbUrl:'',width:0,height:0,type:mime.startsWith('video/')?'video':'image'};
 }
 
+async function verifyUploadedVideo(key,size,mime){
+  const length=Math.max(0,Number(size)||0);
+  const headN=Math.min(length,524288),tailN=Math.min(length,2097152);
+  async function range(start,end){const r=await client().send(new GetObjectCommand({Bucket:process.env.R2_BUCKET,Key:key,Range:`bytes=${start}-${end}`}));return Buffer.from(await r.Body.transformToByteArray())}
+  const head=await range(0,headN-1);
+  const tail=length<=headN?head:await range(length-tailN,length-1);
+  return enforceVideoDuration(head,tail,mime);
+}
+
 async function uploadFile(file,prefix='media',options={}){
   if(!file?.buffer)throw new Error('Fayl topilmadi.');
   const detected=await sniff(file.buffer);if(!compatible(file.mimetype,detected))throw new Error('Fayl turi xavfsizlik tekshiruvidan o‘tmadi.');
+  const duration=String(file.mimetype||'').startsWith('video/')&&String(prefix).startsWith('posts')?enforceVideoDuration(file.buffer,file.buffer,file.mimetype):0;
   const isImage=/^image\/(jpeg|png|webp|avif)$/i.test(file.mimetype||'');
   if(isImage && options.optimize!==false){
     const img=sharp(file.buffer,{failOn:'warning'}).rotate();
@@ -53,7 +64,7 @@ async function uploadFile(file,prefix='media',options={}){
   const ext=(String(file.originalname||'file').split('.').pop()||'bin').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,8)||'bin';
   const key=`${prefix}/${Date.now()}-${crypto.randomBytes(8).toString('hex')}.${ext}`;
   const out=await put(file.buffer,key,file.mimetype||'application/octet-stream',options.cacheControl||'public, max-age=3600');
-  return {...out,thumbKey:'',thumbUrl:'',width:0,height:0,type:(file.mimetype||'').startsWith('video/')?'video':(file.mimetype||'').startsWith('audio/')?'audio':'file'};
+  return {...out,thumbKey:'',thumbUrl:'',width:0,height:0,type:(file.mimetype||'').startsWith('video/')?'video':(file.mimetype||'').startsWith('audio/')?'audio':'file',duration};
 }
 async function uploadImage(file,prefix='posts',options={}){return uploadFile(file,prefix,options)}
 async function uploadCaption(vtt,prefix='posts/captions'){
@@ -80,4 +91,4 @@ async function getCaptionText(key){
  if(Buffer.byteLength(text,'utf8')>32*1024)throw new Error('Subtitr juda katta.');
  return text;
 }
-module.exports={uploadImage,uploadFile,uploadStream,uploadCaption,getCaptionText,deleteImage,deleteMany,listPrefix,listPrefixPage,configured,publicUrl};
+module.exports={uploadImage,uploadFile,uploadStream,verifyUploadedVideo,uploadCaption,getCaptionText,deleteImage,deleteMany,listPrefix,listPrefixPage,configured,publicUrl};

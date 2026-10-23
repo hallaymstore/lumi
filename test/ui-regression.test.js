@@ -9,7 +9,7 @@ test('Post options menu is accessible and rendered through portal',()=>{
  assert.match(ui,/e\.key!=='Escape'/);assert.match(css,/\.post-menu-pop:not\(\[hidden\]\)/);
 });
 test('Clips integrates Feed comments and share sheets',()=>{
- const c=read('views/clips/index.ejs'),a=read('public/js/app.js');
+ const c=read('views/clips/index.ejs')+read('views/clips/cards.ejs'),a=read('public/js/app.js');
  assert.match(c,/data-comments-open/);assert.match(c,/data-share-open/);
  assert.match(c,/partials\/postsheets/);
  assert.doesNotMatch(c,/href="\/p\/<%=p\._id%>" aria-label="Izohlar"/);
@@ -17,8 +17,8 @@ test('Clips integrates Feed comments and share sheets',()=>{
  assert.match(a,/lumi:sheet-open/);assert.match(a,/lumi:sheet-close/);
 });
 test('Video is paused on dialog and keyboard ignores focused form fields',()=>{
- const c=read('public/js/lumi-clips.js');
- assert.match(c,/sheetDepth/);assert.match(c,/lumi:sheet-open/);assert.match(c,/lumi:sheet-close/);
+ const c=read('public/js/lumi-clips-v15.js');
+ assert.match(c,/overlay/);assert.match(c,/lumi:sheet-open/);assert.match(c,/lumi:sheet-close/);
  assert.match(c,/document\.querySelector\('\.sheet-backdrop\.open'\)/);
 });
 test('Polish CSS comes after legacy CSS and reserves navbar space',()=>{
@@ -29,7 +29,7 @@ test('Polish CSS comes after legacy CSS and reserves navbar space',()=>{
 });
 
 test('Clips like count updates with shared AJAX and authenticated share list is provided',()=>{
- const c=read('views/clips/index.ejs'),route=read('routes/clips.js');
+ const c=read('views/clips/index.ejs')+read('views/clips/cards.ejs'),route=read('routes/clips.js');
  assert.match(c,/data-like-count/);
  assert.match(c,/postsheets',\{shareTargets\}/);
  assert.match(route,/getShareTargets\(req\.currentUser\._id,30\)/);
