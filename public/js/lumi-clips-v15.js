@@ -80,6 +80,7 @@
     update(c);
    });
    v.addEventListener('canplay',()=>{if(active===c&&v.paused&&!c._manualPause)play(c)});
+   v.addEventListener('loadeddata',()=>{if(active===c&&v.paused&&!c._manualPause&&!overlay)play(c)});
    v.addEventListener('waiting',()=>c.classList.add('is-buffering'));
    v.addEventListener('playing',()=>c.classList.remove('is-buffering','needs-tap'));
    v.addEventListener('error',()=>{c.classList.remove('is-loading','is-buffering');c.classList.add('needs-tap')});
@@ -134,6 +135,9 @@
   document.addEventListener('visibilitychange',()=>{
    if(document.hidden){active&&vid(active).pause()}else if(active&&!overlay&&!active._manualPause)play(active)
   });
+  // A swipe/touch can unlock playback in Android WebViews that delay muted autoplay.
+  list.addEventListener('touchstart',()=>{if(active&&!saver&&!reduced&&!overlay&&!active._manualPause&&vid(active).paused)play(active,true)},{passive:true});
+  list.addEventListener('pointerdown',e=>{if(e.target.closest('button,input,a'))return;if(active&&!saver&&!reduced&&!overlay&&!active._manualPause&&vid(active).paused)play(active,true)},{passive:true});
   window.addEventListener('pagehide',()=>flush(active));
   end?.querySelector('[data-clips-refresh]')?.addEventListener('click',()=>location.reload());
   function shift(delta){
