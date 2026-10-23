@@ -1,0 +1,12 @@
+<%
+  /* One rendered page of the feed: posts plus the sponsored cards planned for this page (adSlots). */
+  const slotMap = new Map((adSlots || []).map(s => [s.after, s]));
+  const isFirst = typeof firstPage !== 'undefined' && !!firstPage;   // only page 1 loads its top images eagerly
+%><% posts.forEach((p, i) => { %>
+  <% if (p.expiresAt) { %><div class="fresh-expiry-badge" data-fresh-until="<%= new Date(p.expiresAt).toISOString() %>">⏳ Fresh 24h</div><% } %>
+  <%- include('postcard', { p, eager: isFirst && i < 2 }) %>
+  <% const slot = adConfig?.enabled ? slotMap.get(i + 1) : null; if (slot) { %>
+    <% if (slot.ad) { %><%- include('adcard', { ad: slot.ad, placement: 'feed', variant: 'native', adConfig }) %>
+    <% } else if (slot.network) { %><%- include('networkad', { placement: 'feed', variant: 'native', adConfig }) %><% } %>
+  <% } %>
+<% }); %>

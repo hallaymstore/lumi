@@ -167,28 +167,40 @@
   });
 
   // Save/bookmark a post without reloading.
-  document.querySelectorAll('[data-save-post]').forEach(btn => btn.addEventListener('click', async () => {
+  document.addEventListener('click', async e => {
+    const btn = e.target.closest('[data-save-post]');
+    if (!btn || btn.disabled) return;
     btn.disabled = true;
     try {
       const r = await fetch(`/posts/${btn.dataset.savePost}/save`, { method:'POST', headers:{ Accept:'application/json' } });
       const data = await r.json();
       if (data.ok) { btn.classList.toggle('saved', data.saved); toast(data.saved ? 'Post saqlandi' : 'Saqlanganlardan olindi'); }
-    } finally { btn.disabled = false; }
-  }));
+    } catch (_) {} finally { btn.disabled = false; }
+  });
 
   // Double click/tap desktop image: like quickly.
-  document.querySelectorAll('[data-double-like]').forEach(img => img.addEventListener('dblclick', () => {
+  document.addEventListener('dblclick', e => {
+    const img = e.target.closest('[data-double-like]');
+    if (!img) return;
+    e.preventDefault();
+    // Touch double-tap can raise both a native dblclick and Lumi's own detector: handle once.
+    const stamp = Date.now();
+    if (img._lumiLike && stamp - img._lumiLike < 700) return;
+    img._lumiLike = stamp;
     const card = img.closest('[data-post-id]');
     const form = card?.querySelector('.ajax-like-form');
     const btn = form?.querySelector('button');
-    if (form && btn && !btn.classList.contains('liked')) form.requestSubmit();
-  }));
+    if (form && btn && !btn.classList.contains('liked') && !btn.disabled) form.requestSubmit();
+    else if (!form) card?.querySelector('[data-auth-required]')?.click();
+    window.dispatchEvent(new CustomEvent('lumi:heart-burst', { detail: { el: img, x: e.clientX, y: e.clientY } }));
+  });
 
   // Who liked a post.
   const likesSheet = document.querySelector('[data-likes-sheet]');
   const likesList = likesSheet?.querySelector('[data-likes-list]');
-  document.querySelectorAll('[data-post-likes-open]').forEach(btn => btn.addEventListener('click', async () => {
-    if (!likesSheet || !likesList) return;
+  document.addEventListener('click', async e => {
+    const btn = e.target.closest('[data-post-likes-open]');
+    if (!btn || !likesSheet || !likesList) return;
     likesList.innerHTML = '<div class="sheet-loading">Yuklanmoqda…</div>';
     likesSheet.hidden = false; document.body.classList.add('sheet-open'); requestAnimationFrame(() => likesSheet.classList.add('open'));
     try {
@@ -197,7 +209,7 @@
       likesList.innerHTML = data.users?.length ? data.users.map(u => `<a class="people-row" href="/u/${encodeURIComponent(u.username)}"><span class="avatar">${u.avatarUrl ? `<img src="${esc(u.avatarUrl)}" alt="">` : `<b>${esc((u.name||u.username||'U')[0])}</b>`}</span><span><strong>${esc(u.name || u.username)}</strong><small>@${esc(u.username)}</small></span>${u.isVerified ? '<i data-lucide="badge-check" class="verified"></i>' : ''}</a>`).join('') : '<div class="empty-mini">Hali like yo‘q.</div>';
       icons();
     } catch (_) { likesList.innerHTML = '<div class="empty-mini">Yuklanmadi.</div>'; }
-  }));
+  });
 
   // @username autocomplete while creating a post.
   const mentionInput = document.querySelector('[data-mention-input]');

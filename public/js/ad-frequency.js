@@ -22,10 +22,11 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
-    const store = loadStore();
-    cleanup(store);
-    saveStore(store);
+  // One shared store object for the whole page, so lazily loaded feed pages never write a stale copy.
+  const shared = (() => { const s = loadStore(); cleanup(s); saveStore(s); return s; })();
+
+  window.Lumi.onMount(root => {
+    const store = shared;
 
     const markImpression = id => {
       const row = store[id] || { impressions: [], dismissUntil: 0 };
@@ -35,7 +36,7 @@
       saveStore(store);
     };
 
-    const cards = [...document.querySelectorAll('[data-ad-card]')];
+    const cards = [...root.querySelectorAll('[data-ad-card]')].filter(el => window.Lumi.once(el, 'AdFreq'));
     const allowed = [];
 
     for (const card of cards) {
@@ -96,24 +97,22 @@
     network.impressions = (network.impressions || []).filter(ts => Number(ts) >= now() - 30 * 60 * 1000);
     store[networkKey] = network;
 
-    const networkSlots = [...document.querySelectorAll('[data-network-ad]')];
+    const networkSlots = [...root.querySelectorAll('[data-network-ad]')].filter(el => window.Lumi.once(el, 'NetFreq'));
     if (network.impressions.length >= 4) {
       networkSlots.forEach(slot => slot.remove());
       saveStore(store);
       return;
     }
 
-    let networkRecorded = 0;
     const networkSeen = new WeakSet();
     if ('IntersectionObserver' in window && networkSlots.length) {
       const nio = new IntersectionObserver(entries => entries.forEach(entry => {
         if (!entry.isIntersecting || entry.intersectionRatio < .35 || networkSeen.has(entry.target)) return;
-        if (network.impressions.length + networkRecorded >= 4) {
+        if (network.impressions.length >= 4) {
           entry.target.remove();
           return;
         }
         networkSeen.add(entry.target);
-        networkRecorded += 1;
         network.impressions.push(now());
         store[networkKey] = network;
         saveStore(store);

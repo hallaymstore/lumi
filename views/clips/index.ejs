@@ -1,12 +1,12 @@
 <%- include('../partials/head') %><%- include('../partials/topbar') %>
 <main class="lumi-clips-page" data-clips-feed tabindex="-1">
- <div class="lumi-clips-heading"><span><i data-lucide="clapperboard"></i> LUMI <b>CLIPS</b></span><span class="lumi-clips-help">↑ ↓ yoki suring · video ustiga bosing</span><a href="/posts/create?type=clip" class="lumi-clips-create"><i data-lucide="plus"></i> Clip yaratish</a></div>
  <section class="lumi-clips-list" aria-label="Vertikal videolar" data-clip-scroll>
  <%if(!clips.length){%><div class="lumi-clips-empty"><i data-lucide="clapperboard"></i><h1>Hozircha Clips mavjud emas</h1><p>Birinchi vertikal videoni joylashtiring.</p><a class="btn primary" href="<%=currentUser?'/posts/create?type=clip':'/register'%>">Video joylash</a></div><%}%>
  <%- include('cards',{clips}) %>
-
+ <div class="lumi-clips-end" data-clips-end hidden><i data-lucide="sparkles"></i><b>Hozircha boshqa videolar yo‘q</b><span>Yangi videolar uchun yangilang</span><button type="button" data-clips-refresh>Yangilash</button></div>
  </section>
- <div class="lumi-clips-end" data-clips-end hidden>Hozircha boshqa videolar yo‘q. <button type="button" data-clips-refresh>Yangilash</button></div>
+ <div class="lumi-clips-hint" aria-hidden="true">↑ ↓ · bo‘sh joy · M · L</div>
+ <a href="/posts/create?type=clip" class="lumi-clips-create" aria-label="Clip yaratish"><i data-lucide="plus"></i><span>Clip</span></a>
 </main>
 <%- include('../partials/postsheets',{shareTargets}) %>
 <%- include('../partials/footer') %>

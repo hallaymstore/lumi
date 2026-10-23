@@ -27,13 +27,15 @@ const FeedEvent=require('../models/FeedEvent');
 const {requireAuth}=require('../middleware/auth');
 const {userSignals}=require('../services/feed');
 const {rankClips}=require('../services/clipRank');
+const {clipStats}=require('../services/clipStats');
 
 const AUTHOR_FIELDS='name username avatarUrl isVerified isPrivate isSuspended accountOrigin proExpiresAt';
 const MAX_SEEN=90;
 function excluded(raw){
  return [...new Set(String(raw||'').split(',').filter(x=>/^[a-f0-9]{24}$/i.test(x)))].slice(-MAX_SEEN);
 }
-async function candidatesForClips(){
+let candidateCache={at:0,rows:null};
+async function loadCandidates(){
  const base=publishedQuery({'media.type':'video'});
  const [fresh,quality,discovery]=await Promise.all([
   Post.find(base).sort({createdAt:-1}).limit(110).populate('author',AUTHOR_FIELDS).lean(),
@@ -44,9 +46,15 @@ async function candidatesForClips(){
  for(const p of [...fresh,...quality,...discovery])if(p?._id)posts.set(String(p._id),p);
  return [...posts.values()];
 }
+// Candidate pool is shared by all viewers and refreshed every 30 s; personal filtering happens in rankClips().
+async function candidatesForClips(){
+ if(candidateCache.rows&&Date.now()-candidateCache.at<30_000)return candidateCache.rows;
+ const rows=await loadCandidates();candidateCache={at:Date.now(),rows};return rows;
+}
 async function recommend(req,limit=8){
  const [rows,signals]=await Promise.all([candidatesForClips(),userSignals(req.currentUser?._id)]);
- const chosen=rankClips(rows,signals,{userId:req.currentUser?._id,limit,exclude:excluded(req.query.seen),nonce:Math.floor(Date.now()/3600000)});
+ const stats=await clipStats(rows.map(p=>p._id)).catch(()=>new Map());
+ const chosen=rankClips(rows,signals,{userId:req.currentUser?._id,limit,exclude:excluded(req.query.seen),nonce:Math.floor(Date.now()/3600000),stats});
  const posts=await decoratePosts(chosen,req.currentUser?._id);
  return posts.map(p=>({...p,video:(p.media||[]).find(m=>m.type==='video'),captionHtml:linkifyMentions(p.caption||'')})).filter(p=>p.video);
 }

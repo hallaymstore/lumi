@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
   const root = document.documentElement;
-  const saved = localStorage.getItem('lumi-theme') || 'light';
+  const saved = localStorage.getItem('lumi-theme') || 'dark';
   root.dataset.theme = saved;
 
   const refreshIcons = () => window.lucide && window.lucide.createIcons();
@@ -522,24 +522,25 @@ document.addEventListener('DOMContentLoaded', () => {
   }));
 
   // Count a unique view when at least half of a post has actually entered the viewport.
+  // Works for lazily loaded feed pages too (see Lumi.onMount in lumi-core.js).
   const viewedThisPage = new Set();
-  const viewTargets = [...document.querySelectorAll('[data-view-track][data-post-id]')];
-  if (viewTargets.length && 'IntersectionObserver' in window) {
-    const observer = new IntersectionObserver(entries => entries.forEach(async entry => {
-      if (!entry.isIntersecting || entry.intersectionRatio < .45) return;
-      const el = entry.target; const id = el.dataset.postId;
-      if (!id || viewedThisPage.has(id)) return;
-      viewedThisPage.add(id); observer.unobserve(el);
-      try {
-        const r = await fetch(`/api/posts/${encodeURIComponent(id)}/view`, { method:'POST', headers:{Accept:'application/json'}, keepalive:true });
-        const data = await r.json();
-        if (data.ok) document.querySelectorAll(`[data-post-id="${CSS.escape(String(id))}"] [data-view-count]`).forEach(x => x.textContent = data.viewCount);
-      } catch (_) {}
-    }), { threshold:[.45] });
-    viewTargets.forEach(el => observer.observe(el));
-  } else {
-    viewTargets.slice(0,1).forEach(el => fetch(`/api/posts/${encodeURIComponent(el.dataset.postId)}/view`, { method:'POST', headers:{Accept:'application/json'} }).catch(()=>{}));
-  }
+  const viewObserver = 'IntersectionObserver' in window ? new IntersectionObserver(entries => entries.forEach(async entry => {
+    if (!entry.isIntersecting || entry.intersectionRatio < .45) return;
+    const el = entry.target; const id = el.dataset.postId;
+    if (!id || viewedThisPage.has(id)) return;
+    viewedThisPage.add(id); viewObserver.unobserve(el);
+    try {
+      const r = await fetch(`/api/posts/${encodeURIComponent(id)}/view`, { method:'POST', headers:{Accept:'application/json'}, keepalive:true });
+      const data = await r.json();
+      if (data.ok) document.querySelectorAll(`[data-post-id="${CSS.escape(String(id))}"] [data-view-count]`).forEach(x => x.textContent = data.viewCount);
+    } catch (_) {}
+  }), { threshold:[.45] }) : null;
+  const bindViews = rootEl => {
+    const targets = [...rootEl.querySelectorAll('[data-view-track][data-post-id]')].filter(el => window.Lumi?.once(el, 'View') ?? true);
+    if (viewObserver) targets.forEach(el => viewObserver.observe(el));
+    else targets.slice(0,1).forEach(el => fetch(`/api/posts/${encodeURIComponent(el.dataset.postId)}/view`, { method:'POST', headers:{Accept:'application/json'} }).catch(()=>{}));
+  };
+  if (window.Lumi) window.Lumi.onMount(bindViews); else bindViews(document);
 
   // Re-tapping the active Feed icon forces a fresh recommendation mix.
   document.querySelector('[data-feed-refresh]')?.addEventListener('click', e => {
