@@ -64,13 +64,15 @@ document.addEventListener('DOMContentLoaded', () => {
     sheet.hidden = false;
     document.body.classList.add('sheet-open');
     requestAnimationFrame(() => sheet.classList.add('open'));
+    document.dispatchEvent(new CustomEvent('lumi:sheet-open',{detail:{sheet}}));
     refreshIcons();
   }
 
   function closeSheet(sheet) {
     if (!sheet) return;
     sheet.classList.remove('open');
-    setTimeout(() => { sheet.hidden = true; }, 180);
+    document.dispatchEvent(new CustomEvent('lumi:sheet-close',{detail:{sheet}}));
+    setTimeout(() => { if (!sheet.classList.contains('open')) sheet.hidden = true; }, 180);
     if (![...document.querySelectorAll('.sheet-backdrop.open')].some(x => x !== sheet)) document.body.classList.remove('sheet-open');
   }
 
@@ -189,7 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await r.json();
       commentsList.innerHTML = data.comments.length ? data.comments.map(commentHtml).join('') : '<div class="empty-mini comments-empty">Hali comment yo‘q. Birinchi bo‘lib yozing ✨</div>';
       refreshIcons();
-      commentsList.scrollTop = commentsList.scrollHeight;
+      commentsList.scrollTop = 0;
     } catch (_) {
       commentsList.innerHTML = '<div class="empty-mini">Comments yuklanmadi.</div>';
     }
@@ -202,6 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   document.querySelectorAll('[data-comments-open]').forEach(btn => btn.addEventListener('click', async () => {
+    if (commentPostId === btn.dataset.commentsOpen && commentsSheet && !commentsSheet.hidden && commentsSheet.classList.contains('open')) { closeSheet(commentsSheet); return; }
     commentPostId = btn.dataset.commentsOpen;
     clearReply();
     openSheet(commentsSheet);
@@ -262,6 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
         await loadComments();
         document.querySelectorAll(`[data-comments-open="${commentPostId}"]`).forEach(b => {
           if (b.classList.contains('comments-summary')) b.textContent = `${data.count} ta commentni ko‘rish`;
+          const clipCount=b.querySelector('[data-clip-comments-count]'); if (clipCount) clipCount.textContent = String(data.count);
         });
       }
     } finally { submit.disabled = false; }

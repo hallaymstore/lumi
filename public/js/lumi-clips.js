@@ -7,6 +7,7 @@
   const saver=document.body.classList.contains('data-saver')||!!navigator.connection?.saveData;
   const reduced=!!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   let current=null,muted=true;
+  let sheetDepth=0,resumeAfterSheet=false;
   const displayTime=t=>{const v=Math.max(0,Math.floor(Number.isFinite(t)?t:0));return Math.floor(v/60)+':'+String(v%60).padStart(2,'0')};
   function load(c){const v=c.querySelector('video');if(!v.src&&v.dataset.source){v.src=v.dataset.source;v.load()}}
   function captions(c,on){const v=c.querySelector('video');const tracks=v.textTracks;if(!tracks?.length)return;for(let i=0;i<tracks.length;i++)tracks[i].mode=on?'showing':'disabled';c.classList.toggle('captions-on',on)}
@@ -23,13 +24,13 @@
    const idx=cards.indexOf(c);[cards[idx-1],cards[idx+1]].filter(Boolean).forEach(n=>{if(!saver)load(n)});
    if(!saver||force)load(c);
    const v=c.querySelector('video');v.muted=muted;
-   if(!saver&&!reduced||force)await v.play().catch(()=>{});
+   if(sheetDepth===0&&(!saver&&!reduced||force))await v.play().catch(()=>{});
    update(c);
   }
   cards.forEach(c=>{
    const video=c.querySelector('video'),seek=c.querySelector('[data-clip-seek]');
    c.querySelectorAll('[data-clip-toggle]').forEach(btn=>btn.addEventListener('click',async e=>{e.stopPropagation();load(c);if(current!==c)await activate(c,true);else if(video.paused)await video.play().catch(()=>{});else video.pause();update(c)}));
-   video.addEventListener('click',()=>{load(c);if(video.paused)video.play().catch(()=>{});else video.pause();});
+   video.addEventListener('click',()=>{if(sheetDepth)return;load(c);if(video.paused)video.play().catch(()=>{});else video.pause();});
    for(const event of ['timeupdate','loadedmetadata','play','pause','ratechange'])video.addEventListener(event,()=>update(c));
    video.addEventListener('waiting',()=>{c.querySelector('[data-clip-buffer]').hidden=false});
    video.addEventListener('playing',()=>{c.querySelector('[data-clip-buffer]').hidden=true});
@@ -55,10 +56,19 @@
    for(const e of entries){if(!e.isIntersecting&&e.target!==current)e.target.querySelector('video').pause()}
   },{root:list,threshold:[0,.58,.85]});
   cards.forEach(c=>observer.observe(c));
-  document.addEventListener('visibilitychange',()=>{if(document.hidden)cards.forEach(c=>c.querySelector('video').pause());else if(current&&!saver&&!reduced)current.querySelector('video').play().catch(()=>{})});
+  document.addEventListener('lumi:sheet-open',()=>{
+    if(sheetDepth===0){resumeAfterSheet=!!current&&!current.querySelector('video').paused;current?.querySelector('video')?.pause()}
+    sheetDepth++;
+  });
+  document.addEventListener('lumi:sheet-close',()=>{
+    sheetDepth=Math.max(0,sheetDepth-1);
+    if(sheetDepth===0&&resumeAfterSheet&&current&&!document.hidden){current.querySelector('video').play().catch(()=>{})}
+    if(sheetDepth===0)resumeAfterSheet=false;
+  });
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)cards.forEach(c=>c.querySelector('video').pause());else if(current&&!saver&&!reduced&&!sheetDepth)current.querySelector('video').play().catch(()=>{})});
   function change(delta){const i=Math.max(0,cards.indexOf(current));cards[Math.max(0,Math.min(cards.length-1,i+delta))]?.scrollIntoView({block:'start',behavior:reduced?'instant':'smooth'})}
   document.addEventListener('keydown',e=>{
-   if(!document.querySelector('[data-clips-feed]')||['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)||e.metaKey||e.ctrlKey)return;
+   if(!document.querySelector('[data-clips-feed]')||sheetDepth||document.querySelector('.sheet-backdrop.open')||['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)||e.metaKey||e.ctrlKey)return;
    const v=current?.querySelector('video');if(!v)return;
    if(['ArrowDown','ArrowUp',' ','m','M','c','C','f','F'].includes(e.key))e.preventDefault();
    if(e.key==='ArrowDown')change(1);else if(e.key==='ArrowUp')change(-1);

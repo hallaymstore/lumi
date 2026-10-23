@@ -27,8 +27,8 @@
    </div>
    <div class="lumi-clip-actions">
     <%if(currentUser){%><form class="inline ajax-like-form" method="post" action="/posts/<%=p._id%>/like"><button class="lumi-clip-action <%=p.likedByMe?'liked':''%>" aria-label="Yoqdi"><i data-lucide="heart"></i><small><%=p.likeCount||0%></small></button></form><%}else{%><button class="lumi-clip-action" type="button" data-auth-required aria-label="Yoqdi"><i data-lucide="heart"></i><small><%=p.likeCount||0%></small></button><%}%>
-    <a class="lumi-clip-action" href="/p/<%=p._id%>" aria-label="Izohlar"><i data-lucide="message-circle"></i><small><%=p.commentCount||0%></small></a>
-    <button class="lumi-clip-action" type="button" data-clip-share="<%=p._id%>" aria-label="Ulashish"><i data-lucide="send"></i><small>Ulashish</small></button>
+    <button class="lumi-clip-action" type="button" data-comments-open="<%=p._id%>" aria-label="Izohlarni ochish"><i data-lucide="message-circle"></i><small data-clip-comments-count><%=p.commentCount||0%></small></button>
+    <button class="lumi-clip-action" type="button" data-share-open="<%=p._id%>" aria-label="Ulashish"><i data-lucide="send"></i><small>Ulashish</small></button>
     <a class="lumi-clip-action" href="/p/<%=p._id%>" aria-label="Post sahifasi"><i data-lucide="external-link"></i></a>
    </div>
    <div class="lumi-clip-indicator"><%=i+1%>/<%=clips.length%></div>
@@ -38,4 +38,5 @@
  </section>
  <%if(nextUrl){%><nav class="lumi-clips-pagination"><a href="<%=nextUrl%>">Yana videolar <i data-lucide="chevron-right"></i></a></nav><%}%>
 </main>
+<%- include('../partials/postsheets',{shareTargets:[]}) %>
 <%- include('../partials/footer') %>
