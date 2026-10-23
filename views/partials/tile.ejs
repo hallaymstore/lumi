@@ -7,11 +7,12 @@ const many = (p.media || []).length > 1;
 const likes = p.likeCount != null ? p.likeCount : (p.likes ? p.likes.length : 0);
 const label = (p.caption || ('@' + (p.author && p.author.username || 'lumi'))).slice(0, 80);
 %>
-<a class="tile<%= isVideo ? ' is-video' : '' %>" href="/p/<%=p._id%>" data-view-track data-post-id="<%=p._id%>" aria-label="<%= isVideo ? 'Video: ' : '' %><%= label %>">
+<a class="tile<%= isVideo ? ' is-video' : '' %>" href="/p/<%=p._id%>" data-post-expires="<%= p.expiresAt ? new Date(p.expiresAt).toISOString() : '' %>" data-view-track data-post-id="<%=p._id%>" aria-label="<%= isVideo ? 'Video: ' : '' %><%= label %>">
   <% if (still) { %><img src="<%= still %>" loading="lazy" decoding="async" alt="" draggable="false"><% }
      else if (isVideo && (m.playbackUrl || m.url)) { %><video src="<%= (m.playbackUrl || m.url) %>#t=0.1" preload="metadata" muted playsinline tabindex="-1"></video><% }
      else { %><span class="tile-empty"><i data-lucide="image"></i></span><% } %>
   <% if (isVideo && still && (m.playbackUrl || m.url)) { %><video class="tile-preview" data-src="<%= (m.playbackUrl || m.url) %>" preload="none" muted loop playsinline tabindex="-1"></video><% } %>
+  <% if (p.isPinned) { %><b class="tile-pin" title="Pin qilingan"><i data-lucide="pin"></i></b><% } %>
   <b class="tile-kind"><% if (isVideo) { %><i data-lucide="play"></i><% } else if (many) { %><i data-lucide="layers"></i><% } %></b>
   <span class="tile-stats"><i data-lucide="heart"></i><%= likes %><i data-lucide="eye"></i><em data-view-count><%= p.viewCount || 0 %></em></span>
 </a>
