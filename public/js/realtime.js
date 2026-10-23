@@ -95,7 +95,7 @@
       const r = await fetch(composer.action, { method:'POST', headers:{ Accept:'application/json','Content-Type':'application/x-www-form-urlencoded' }, body:new URLSearchParams({ text, replyTo: composer.querySelector('[data-chat-reply-id]')?.value || '' }) });
       const data = await r.json();
       if (!r.ok || !data.ok) throw new Error(data.error || 'Yuborilmadi');
-      chatInput.value = '';
+      chatInput.value = ''; chatInput.dispatchEvent(new Event('input'));
       await sendTyping(false);
       await fetchAndAppendMessage(data.messageId);
     } catch (err) { toast(err.message || 'Xabar yuborilmadi'); }

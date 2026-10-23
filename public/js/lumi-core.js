@@ -45,4 +45,21 @@
     }
   };
   window.Lumi = Lumi;
+
+  /* Broken-image safety net. Error events don't bubble, so listen in the capture phase.
+     Avatars fall back to the app icon once; media thumbnails get an `is-broken` hook (styled placeholder). */
+  const FALLBACK = '/icons/icon-192.png';
+  const broken = img => {
+    if (!(img instanceof HTMLImageElement) || img.dataset.lumiBroken) return;
+    img.dataset.lumiBroken = '1';
+    if (img.closest('.avatar,.avatar-mini,.profile-avatar,.creator-pill,.story,.chat-avatar,.note-avatar,.user-line,.detail-author')) {
+      if (!img.src.endsWith(FALLBACK)) { img.src = FALLBACK; img.classList.add('avatar-fallback'); }
+      return;
+    }
+    const host = img.closest('.tile,.shared-post,.shared-story,.post-image-wrap,.chat-media');
+    img.classList.add('is-broken'); img.removeAttribute('srcset');
+    (host || img.parentElement)?.classList.add('has-broken-media');
+  };
+  document.addEventListener('error', e => broken(e.target), true);
+  Lumi.onMount(root => root.querySelectorAll?.('img').forEach(img => { if (img.complete && img.naturalWidth === 0 && img.getAttribute('src')) broken(img); }));
 })();
