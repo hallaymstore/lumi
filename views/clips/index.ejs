@@ -1,0 +1,41 @@
+<%- include('../partials/head') %><%- include('../partials/topbar') %>
+<main class="lumi-clips-page" data-clips-feed tabindex="-1">
+ <div class="lumi-clips-heading"><span><i data-lucide="clapperboard"></i> LUMI <b>CLIPS</b></span><span class="lumi-clips-help">↑ ↓ yoki suring · video ustiga bosing</span><a href="/posts/create?type=clip" class="lumi-clips-create"><i data-lucide="plus"></i> Clip yaratish</a></div>
+ <section class="lumi-clips-list" aria-label="Vertikal videolar" data-clip-scroll>
+ <%if(!clips.length){%><div class="lumi-clips-empty"><i data-lucide="clapperboard"></i><h1>Hozircha Clips mavjud emas</h1><p>Birinchi vertikal videoni joylashtiring.</p><a class="btn primary" href="<%=currentUser?'/posts/create?type=clip':'/register'%>">Video joylash</a></div><%}%>
+ <%clips.forEach((p,i)=>{const m=p.video,own=currentUser&&String(currentUser._id)===String(p.author._id);%>
+ <article class="lumi-clip" data-clip data-post-id="<%=p._id%>" data-view-track data-post-author="<%=p.author._id%>" aria-label="@<%=p.author.username%> video posti">
+  <div class="lumi-clip-stage" data-clip-stage>
+   <video class="lumi-clip-video" playsinline muted loop preload="none" <%=m.posterUrl||m.thumbUrl?'poster="'+String(m.posterUrl||m.thumbUrl).replace(/"/g,'&quot;')+'"':''%> data-source="<%=m.playbackUrl||m.url%>" aria-label="@<%=p.author.username%> videosi">
+    <%if(m.captionsUrl){%><track kind="captions" label="<%=m.captionsLang||'O‘zbekcha'%>" srclang="uz" src="<%=m.captionsUrl%>"><%}%>
+   </video>
+   <button class="lumi-clip-center" data-clip-toggle aria-label="Video ijrosini boshqarish"><i data-lucide="play"></i></button>
+   <div class="lumi-clip-buffer" data-clip-buffer hidden><i data-lucide="loader-circle"></i></div>
+   <div class="lumi-clip-overlay">
+    <div class="lumi-clip-author"><a href="/u/<%=p.author.username%>"><img src="<%=p.author.avatarUrl||'/icons/icon-192.png'%>" alt=""><span><b><%=p.author.name%></b><small>@<%=p.author.username%><%if(p.author.proExpiresAt&&new Date(p.author.proExpiresAt)>new Date()){%> · ✦ Pro<%}%></small></span></a></div>
+    <p class="lumi-clip-description"><%-p.captionHtml||p.caption||''%></p>
+    <div class="lumi-clip-controlstrip">
+     <button data-clip-toggle aria-label="O‘ynatish yoki to‘xtatish"><i data-lucide="pause"></i></button>
+     <span class="lumi-clip-time" data-clip-time>0:00 / 0:00</span>
+     <input type="range" min="0" max="1000" step="1" value="0" data-clip-seek aria-label="Video vaqti">
+     <button data-clip-mute aria-label="Ovozni yoqish yoki o‘chirish"><i data-lucide="volume-x"></i></button>
+     <button data-clip-cc aria-label="Subtitrlarni yoqish yoki o‘chirish" <%=m.captionsUrl?'':'disabled'%>><i data-lucide="captions"></i></button>
+     <button data-clip-speed aria-label="Ijro tezligi" title="1×"><span data-speed-value>1×</span></button>
+     <button data-clip-pip aria-label="Mini pleyer"><i data-lucide="picture-in-picture-2"></i></button>
+     <button data-clip-fullscreen aria-label="To‘liq ekran"><i data-lucide="maximize"></i></button>
+    </div>
+   </div>
+   <div class="lumi-clip-actions">
+    <%if(currentUser){%><form class="inline ajax-like-form" method="post" action="/posts/<%=p._id%>/like"><button class="lumi-clip-action <%=p.likedByMe?'liked':''%>" aria-label="Yoqdi"><i data-lucide="heart"></i><small><%=p.likeCount||0%></small></button></form><%}else{%><button class="lumi-clip-action" type="button" data-auth-required aria-label="Yoqdi"><i data-lucide="heart"></i><small><%=p.likeCount||0%></small></button><%}%>
+    <a class="lumi-clip-action" href="/p/<%=p._id%>" aria-label="Izohlar"><i data-lucide="message-circle"></i><small><%=p.commentCount||0%></small></a>
+    <button class="lumi-clip-action" type="button" data-clip-share="<%=p._id%>" aria-label="Ulashish"><i data-lucide="send"></i><small>Ulashish</small></button>
+    <a class="lumi-clip-action" href="/p/<%=p._id%>" aria-label="Post sahifasi"><i data-lucide="external-link"></i></a>
+   </div>
+   <div class="lumi-clip-indicator"><%=i+1%>/<%=clips.length%></div>
+  </div>
+ </article>
+ <%})%>
+ </section>
+ <%if(nextUrl){%><nav class="lumi-clips-pagination"><a href="<%=nextUrl%>">Yana videolar <i data-lucide="chevron-right"></i></a></nav><%}%>
+</main>
+<%- include('../partials/footer') %>

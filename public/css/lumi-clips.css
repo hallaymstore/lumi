@@ -1,0 +1,47 @@
+/* Lumi Clips – fullscreen-inspired, compact and accessible */
+.lumi-clips-page{width:100%;margin:0 auto;max-width:970px;padding:5px 10px 90px;min-width:0}
+.lumi-clips-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;height:42px;font-size:11px;color:var(--muted)}
+.lumi-clips-heading>span:first-child{display:flex;gap:6px;align-items:center;font-size:13px;letter-spacing:.075em;color:var(--text);font-weight:700}
+.lumi-clips-heading svg{width:17px;height:17px}
+.lumi-clips-create{display:inline-flex;align-items:center;gap:5px;padding:6px 10px;border-radius:10px;background:var(--surface2);font-weight:700;color:var(--text);font-size:11px;text-decoration:none}
+.lumi-clips-list{margin:0 auto;max-width:min(100%,520px);height:calc(100svh - 170px);min-height:370px;overflow-y:auto;overscroll-behavior-y:contain;scroll-snap-type:y mandatory;scrollbar-width:none;border-radius:18px}
+.lumi-clips-list::-webkit-scrollbar{display:none}
+.lumi-clip{height:100%;min-height:100%;width:100%;scroll-snap-align:start;scroll-snap-stop:always;position:relative;display:flex;align-items:stretch;justify-content:center}
+.lumi-clip-stage{position:relative;height:100%;width:100%;overflow:hidden;background:#0b0b10;border-radius:16px;color:#fff;isolation:isolate}
+.lumi-clip-video{width:100%;height:100%;object-fit:contain;background:#0b0b10;display:block}
+.lumi-clip-video::cue{color:#fff;background:rgba(0,0,0,.62);font-size:clamp(13px,2.3vw,19px)}
+.lumi-clip-overlay{position:absolute;left:0;right:0;bottom:0;z-index:3;padding:70px 12px 11px;background:linear-gradient(0deg,rgba(0,0,0,.85),rgba(0,0,0,.32) 65%,transparent);pointer-events:none}
+.lumi-clip-overlay a,.lumi-clip-overlay button,.lumi-clip-overlay input{pointer-events:auto}
+.lumi-clip-author{max-width:calc(100% - 72px);margin-bottom:7px}
+.lumi-clip-author>a{display:flex;gap:9px;align-items:center;color:#fff;text-decoration:none;font-size:12px}
+.lumi-clip-author img{width:35px;height:35px;border-radius:50%;object-fit:cover;border:1px solid rgba(255,255,255,.4)}
+.lumi-clip-author span{display:grid;min-width:0}
+.lumi-clip-author small{opacity:.78;font-size:10px}
+.lumi-clip-description{font-size:12px;line-height:1.35;max-width:calc(100% - 65px);max-height:66px;overflow:hidden;margin:3px 0 11px;overflow-wrap:anywhere}
+.lumi-clip-controlstrip{display:flex;gap:6px;align-items:center;pointer-events:auto}
+.lumi-clip-controlstrip button{border:0;color:#fff;background:rgba(255,255,255,.15);border-radius:8px;min-width:27px;height:27px;display:grid;place-items:center;cursor:pointer;padding:3px}
+.lumi-clip-controlstrip button svg{width:16px;height:16px}
+.lumi-clip-controlstrip button:disabled{opacity:.3;cursor:not-allowed}
+.lumi-clip-controlstrip input[type=range]{min-width:15px;flex:1;accent-color:#f95c97;height:13px}
+.lumi-clip-time{font-size:10px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.lumi-clip-center{position:absolute;top:49%;left:50%;transform:translate(-50%,-50%);width:59px;height:59px;display:grid;place-items:center;border-radius:50%;border:1px solid rgba(255,255,255,.4);background:rgba(10,10,15,.4);backdrop-filter:blur(10px);color:#fff;z-index:4;cursor:pointer;transition:opacity .15s}
+.lumi-clip-center svg{width:26px;height:26px;fill:currentColor}
+.lumi-clip.is-playing .lumi-clip-center{opacity:0;pointer-events:none}
+.lumi-clip-buffer{position:absolute;top:38%;left:50%;transform:translate(-50%,-50%);z-index:3}
+.lumi-clip-buffer svg{animation:lumi-spin 1s linear infinite}
+@keyframes lumi-spin{to{transform:rotate(360deg)}}
+.lumi-clip-actions{position:absolute;right:10px;bottom:89px;display:grid;gap:14px;z-index:4}
+.lumi-clip-actions .inline{display:block}
+.lumi-clip-action{display:grid;place-items:center;gap:3px;border:0;background:rgba(10,10,15,.45);color:white;text-decoration:none;border-radius:12px;padding:8px;min-width:43px;cursor:pointer}
+.lumi-clip-action svg{width:20px;height:20px}
+.lumi-clip-action small{font-size:10px;max-width:56px}
+.lumi-clip-action.liked svg{fill:#fb4982;stroke:#fb4982}
+.lumi-clip-indicator{position:absolute;top:10px;right:12px;border-radius:30px;background:rgba(0,0,0,.44);padding:5px 9px;font-size:10px;z-index:4}
+.lumi-clips-pagination{display:flex;justify-content:center;margin:10px auto}
+.lumi-clips-pagination a{font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px}
+.lumi-clips-empty{height:100%;display:grid;place-content:center;text-align:center;gap:10px;padding:25px;background:var(--surface2);color:var(--text);border-radius:18px}
+.lumi-clips-empty>svg{margin:0 auto;width:42px;height:42px}
+.lumi-clips-empty h1{font-size:19px}
+.lumi-clips-empty p{font-size:12px}
+@media(max-width:650px){.lumi-clips-page{padding:0 0 68px}.lumi-clips-heading{height:35px;padding:0 9px}.lumi-clips-help{display:none}.lumi-clips-list{width:100%;max-width:420px;height:calc(100svh - 150px);border-radius:0;min-height:330px}.lumi-clip-stage{border-radius:0}.lumi-clip-overlay{padding:65px 10px 9px}.lumi-clip-actions{bottom:82px;right:7px;gap:9px}.lumi-clip-controlstrip{gap:4px}.lumi-clip-time{font-size:9px}.lumi-clip-controlstrip button{min-width:25px;height:25px}.lumi-clip-description{font-size:11px}.lumi-clip-author{margin-bottom:5px}}
+@media(prefers-reduced-motion:reduce){.lumi-clip-center{transition:none}.lumi-clip-buffer svg{animation:none}}
