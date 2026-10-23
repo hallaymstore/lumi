@@ -121,3 +121,21 @@
   .profile-hero{padding-bottom:10px!important}
   .profile-avatar{width:63px!important;height:63px!important;min-width:63px!important}
 }
+
+/* Cross-page compact polish for creator, settings and private media. */
+.settings-page .settings-card,.analytics-page .analytics-panel{padding:14px!important;border-radius:13px!important}
+.settings-page .settings-head h1,.analytics-page .analytics-hero h1{font-size:23px!important}
+.settings-page .settings-card h2,.analytics-page .analytics-panel h2{font-size:15px!important}
+.settings-page .settings-card label{font-size:12px}
+.settings-page .settings-card textarea,.settings-page .settings-card input,.settings-page .settings-card select{font-size:12px}
+.create-card{padding:16px!important}
+.create-card .upload-preview{min-height:180px!important}
+.chat-room .chat-media-video,.message-scroll .chat-media-video{width:100%!important;max-width:330px!important;max-height:350px!important;object-fit:contain;border-radius:12px;background:#0d0d12}
+.chat-room .message-bubble{font-size:12px!important;border-radius:13px!important}
+.chat-room .message-wrap{margin:4px 0!important}
+@media(max-width:600px){
+  .settings-page .settings-card,.analytics-page .analytics-panel,.create-card{padding:11px!important}
+  .settings-page .settings-head h1,.analytics-page .analytics-hero h1{font-size:20px!important}
+  .create-card .upload-preview{min-height:145px!important}
+  .chat-room .chat-media-video,.message-scroll .chat-media-video{max-height:44svh!important;max-width:100%!important}
+}
