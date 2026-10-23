@@ -7,7 +7,7 @@
     <% media.forEach((m,idx)=>{ %>
       <% if(m.type==='video'){ %>
         <div class="post-image-wrap lumi-video-player" data-lumi-video data-video-post="<%=p._id%>">
-          <video class="post-image lumi-video-media" data-video-src="<%=m.playbackUrl||m.url%>" poster="<%=m.posterUrl||m.thumbUrl||''%>" muted playsinline preload="none" loop aria-label="@<%=p.author.username%> videosi"><%if(m.captionsUrl){%><track kind="captions" label="Subtitr" srclang="<%=m.captionsLang||'uz'%>" src="<%=m.captionsUrl%>"><%}%></video>
+          <video class="post-image lumi-video-media" data-video-src="<%=m.playbackUrl||m.url%>" poster="<%=m.posterUrl||m.thumbUrl||''%>" muted playsinline preload="none" loop aria-label="@<%=p.author.username%> videosi"><%if(m.captionsUrl){%><track kind="captions" label="Subtitr" srclang="<%=m.captionsLang||'uz'%>" src="/api/clips/caption/<%=p._id%>?i=<%=idx%>"><%}%></video>
           <button type="button" class="lumi-video-bigplay" data-video-toggle aria-label="Videoni o‘ynatish"><i data-lucide="play"></i></button>
           <div class="lumi-video-controls" aria-label="Video boshqaruvi">
             <button class="lumi-video-control lumi-video-toggle" type="button" data-video-toggle aria-label="Pauza yoki ijro"><i class="lumi-play-icon" data-lucide="play"></i><i class="lumi-pause-icon" data-lucide="pause"></i></button>

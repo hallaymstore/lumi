@@ -1,4 +1,4 @@
-const { S3Client, PutObjectCommand, DeleteObjectCommand, ListObjectsV2Command } = require('@aws-sdk/client-s3');
+const { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, ListObjectsV2Command } = require('@aws-sdk/client-s3');
 const crypto = require('crypto');
 const sharp = require('sharp');
 
@@ -72,4 +72,12 @@ async function listPrefixPage(prefix,maxKeys=250,startAfter=''){
   const objects=page.Contents||[];
   return {objects,nextStartAfter:page.IsTruncated&&objects.length?objects[objects.length-1].Key:''};
 }
-module.exports={uploadImage,uploadFile,uploadStream,uploadCaption,deleteImage,deleteMany,listPrefix,listPrefixPage,configured,publicUrl};
+async function getCaptionText(key){
+ if(!configured()||!/^(posts\/)[A-Za-z0-9/_-]+\.vtt$/.test(key))throw new Error('Subtitr kaliti noto‘g‘ri.');
+ const result=await client().send(new GetObjectCommand({Bucket:process.env.R2_BUCKET,Key:key}));
+ if(!result.Body)throw new Error('Subtitr mavjud emas.');
+ const text=await result.Body.transformToString('utf-8');
+ if(Buffer.byteLength(text,'utf8')>32*1024)throw new Error('Subtitr juda katta.');
+ return text;
+}
+module.exports={uploadImage,uploadFile,uploadStream,uploadCaption,getCaptionText,deleteImage,deleteMany,listPrefix,listPrefixPage,configured,publicUrl};

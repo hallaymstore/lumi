@@ -1,10 +1,27 @@
 const router=require('express').Router();
+const mongoose=require('mongoose');
+const {getCaptionText}=require('../services/r2');
+
 const Post=require('../models/Post');
 const Follow=require('../models/Follow');
 const UserRelation=require('../models/UserRelation');
 const {publishedQuery}=require('../services/freshPosts');
 const {decoratePosts}=require('../utils/socialState');
 const {linkifyMentions}=require('../utils/mentions');
+router.get('/api/clips/caption/:postId',async(req,res)=>{
+ if(!mongoose.isValidObjectId(req.params.postId))return res.sendStatus(404);
+ const i=Number(req.query.i||0);if(!Number.isInteger(i)||i<0||i>9)return res.sendStatus(404);
+ try{
+  const post=await Post.findOne(publishedQuery({_id:req.params.postId})).populate('author','isPrivate isSuspended').lean();
+  if(!post?.author||post.author.isSuspended||!post.media?.[i]?.captionsKey)return res.sendStatus(404);
+  const uid=req.currentUser?String(req.currentUser._id):'';
+  const authorId=String(post.author._id);
+  if(post.author.isPrivate&&uid!==authorId&&!await Follow.exists({follower:req.currentUser?._id||null,following:post.author._id,status:'accepted'}))return res.sendStatus(404);
+  if(uid&&await UserRelation.exists({type:'block',$or:[{owner:req.currentUser._id,target:post.author._id},{owner:post.author._id,target:req.currentUser._id}]}))return res.sendStatus(404);
+  const text=await getCaptionText(post.media[i].captionsKey);
+  res.set('Cache-Control','private, max-age=120');res.type('text/vtt').send(text);
+ }catch(e){console.error('Clip caption:',e.message);res.sendStatus(404)}
+});
 router.get('/clips',async(req,res,next)=>{
  try{
   const before=typeof req.query.before==='string'&&/^\d{4}-\d\d-\d\dT/.test(req.query.before)?new Date(req.query.before):null;
