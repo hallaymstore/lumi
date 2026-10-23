@@ -5,6 +5,7 @@
     <a class="icon-btn" href="/explore" aria-label="Qidirish"><i data-lucide="search"></i></a>
     <button class="icon-btn" data-theme-toggle aria-label="Tungi rejim"><i data-lucide="moon"></i></button>
     <% if (currentUser) { %>
+      <a class="icon-btn" href="/creator/program" title="Lumi Pro va monetizatsiya" aria-label="Lumi Pro"><i data-lucide="gem"></i></a>
       <% if(!(currentUser.interests||[]).length){ %><a class="icon-btn interest-nudge" href="/onboarding/interests?next=<%=encodeURIComponent(path||'/feed')%>" aria-label="For You qiziqishlarini tanlash" title="For You sozlash"><i data-lucide="sparkles"></i></a><% } %>
       <a class="icon-btn" href="/account" aria-label="Akkaunt markazi" title="Akkaunt markazi"><i data-lucide="sliders-horizontal"></i></a>
       <a class="icon-btn top-badge-anchor" href="/notifications" aria-label="Bildirishnomalar"><i data-lucide="bell"></i><b class="top-badge" data-notification-badge <%= unreadNotifications ? '' : 'hidden' %>><%= unreadNotifications > 99 ? '99+' : unreadNotifications %></b></a>
