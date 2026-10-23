@@ -62,4 +62,29 @@
       panel.addEventListener('click', close);
     });
   });
+
+  /* ---- (4) composer: mic <-> send swap, hide-until-needed reply bar ---- */
+  window.Lumi?.onMount?.(root => {
+    root.querySelectorAll?.('[data-chat-composer]').forEach(f => {
+      if (!window.Lumi.once(f, 'Neo')) return;
+      const input = f.querySelector('[data-chat-input]'); if (!input) return;
+      const sync = () => f.classList.toggle('has-text', input.value.trim().length > 0);
+      input.addEventListener('input', sync); f.addEventListener('submit', () => setTimeout(sync, 0)); sync();
+    });
+  });
+
+  /* ---- (5) desktop: tiles preview their video on hover (never on touch / reduced motion) ---- */
+  if (matchMedia('(hover:hover) and (pointer:fine)').matches && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const stop = v => { try { v.pause(); v.currentTime = 0; } catch (_) {} v.classList.remove('is-on'); };
+    document.addEventListener('pointerover', e => {
+      const tile = e.target.closest?.('.tile.is-video'); if (!tile || tile._neoHover) return; tile._neoHover = true;
+      const v = tile.querySelector('.tile-preview'); if (!v) return;
+      if (!v.src && v.dataset.src) v.src = v.dataset.src;
+      v.play().then(() => v.classList.add('is-on')).catch(() => {});
+    });
+    document.addEventListener('pointerout', e => {
+      const tile = e.target.closest?.('.tile.is-video'); if (!tile || tile.contains(e.relatedTarget)) return; tile._neoHover = false;
+      const v = tile.querySelector('.tile-preview'); if (v) stop(v);
+    });
+  }
 })();
