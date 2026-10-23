@@ -88,3 +88,36 @@
   .bottom-nav .nav-create,.bottom-nav-v15 .nav-create{width:42px!important;height:42px!important;border-radius:13px!important}
 }
 @media(prefers-reduced-motion:reduce){.post-carousel-track,.lumi-video-controls{transition:none!important}}
+
+/* Compactness refinement based on live visual smoke test. */
+@media(min-width:901px){
+  .content.feed-layout{max-width:790px!important}
+  .feed-layout{grid-template-columns:minmax(0,452px) 260px!important;gap:15px!important}
+  .feed-column{width:100%;max-width:452px!important}
+  .post-carousel .post-image,.post-carousel .post-image-wrap{max-height:442px!important}
+  .lumi-video-player{height:min(60vh,442px)!important;max-height:442px!important;min-height:235px!important}
+  .lumi-video-player .lumi-video-media{height:100%!important;max-height:none!important}
+  .desktop-side{padding:12px!important}
+}
+@media(min-width:601px) and (max-width:900px){
+  .feed-column{max-width:475px!important;margin:0 auto!important}
+  .post-carousel .post-image,.post-carousel .post-image-wrap{max-height:455px!important}
+  .lumi-video-player{height:min(58vh,455px)!important;max-height:455px!important}
+  .lumi-video-player .lumi-video-media{max-height:none!important}
+}
+@media(max-width:600px){
+  .feed-column{max-width:425px!important;margin:0 auto!important}
+  .content.feed-layout{padding-top:5px!important}
+  .post-card{margin-bottom:7px!important;border-radius:11px!important}
+  .post-head{min-height:41px!important}
+  .post-actions{padding:1px 6px!important}
+  .post-body{padding:0 9px 8px!important}
+  .post-carousel .post-image,.post-carousel .post-image-wrap{max-height:48svh!important}
+  .lumi-video-player{height:min(48svh,400px)!important;min-height:195px!important;max-height:48svh!important}
+  .lumi-video-player .lumi-video-media{height:100%!important;max-height:none!important}
+  .lumi-video-controls{padding:16px 6px 5px!important}
+  .lumi-video-player .lumi-video-bigplay{width:46px;height:46px}
+  .profile-main>p{margin:3px 0!important}
+  .profile-hero{padding-bottom:10px!important}
+  .profile-avatar{width:63px!important;height:63px!important;min-width:63px!important}
+}
