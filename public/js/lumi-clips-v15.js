@@ -136,8 +136,10 @@
    if(document.hidden){active&&vid(active).pause()}else if(active&&!overlay&&!active._manualPause)play(active)
   });
   // A swipe/touch can unlock playback in Android WebViews that delay muted autoplay.
-  list.addEventListener('touchstart',()=>{if(active&&!saver&&!reduced&&!overlay&&!active._manualPause&&vid(active).paused)play(active,true)},{passive:true});
-  list.addEventListener('pointerdown',e=>{if(e.target.closest('button,input,a'))return;if(active&&!saver&&!reduced&&!overlay&&!active._manualPause&&vid(active).paused)play(active,true)},{passive:true});
+  let swipeOrigin=null;
+  list.addEventListener('touchstart',e=>{swipeOrigin=e.touches?.[0]?.clientY??null},{passive:true});
+  list.addEventListener('touchmove',e=>{const y=e.touches?.[0]?.clientY;if(swipeOrigin!==null&&Number.isFinite(y)&&Math.abs(y-swipeOrigin)>16){swipeOrigin=null;if(active&&!saver&&!reduced&&!overlay&&!active._manualPause&&vid(active).paused)play(active,true)}},{passive:true});
+  list.addEventListener('pointerdown',e=>{if(e.target.closest('button,input,a,video'))return;if(active&&!saver&&!reduced&&!overlay&&!active._manualPause&&vid(active).paused)play(active,true)},{passive:true});
   window.addEventListener('pagehide',()=>flush(active));
   end?.querySelector('[data-clips-refresh]')?.addEventListener('click',()=>location.reload());
   function shift(delta){
