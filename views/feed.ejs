@@ -1,29 +1,16 @@
 <%- include('partials/head') %><%- include('partials/topbar') %>
-<main class="content feed-layout"><section class="feed-column" data-feed-nonce="<%=feedNonce%>">
+<main class="content feed-layout"><section class="feed-column" data-feed-column data-feed-nonce="<%=feedNonce%>">
   <div class="feed-tabs glass"><a class="<%=feedMode==='foryou'?'active':''%>" href="/feed?tab=foryou">For You</a><a class="<%=feedMode==='following'?'active':''%>" href="/feed?tab=following">Following</a><a class="<%=feedMode==='new'?'active':''%>" href="/feed?tab=new">Yangi</a></div>
   <% if(freshPostsEnabled){ %><div class="card" style="padding:10px 14px;display:flex;align-items:center;gap:10px"><i data-lucide="timer" style="color:var(--primary,#f45)"></i><div><b>Fresh 24h</b><div class="muted tiny">Har kun yangi kontent. Fresh postlar 24 soatdan keyin yo‘qoladi.</div></div></div><% } %>
   <% if(!currentUser){ %><div class="guest-banner card"><span><i data-lucide="sparkles"></i></span><div><b>Lumi’ni erkin tomosha qiling</b><p>Guest ko‘rishlar ham hisoblanadi. Like, comment, follow va chat uchun hisob kerak.</p></div><a class="btn primary" href="/register">Qo‘shilish</a></div><% } %>
   <%- include('partials/storystrip', { storyPeople }) %>
   <% if(!posts.length){ %><div class="empty card"><i data-lucide="image-plus"></i><h2>Bu bo‘lim hali bo‘sh</h2><p><%=feedMode==='following'?'Obuna bo‘lgan creatorlaringiz postlari shu yerda chiqadi.':'Birinchi postni joylash uchun Lumi’ga qo‘shiling ✨'%></p><a class="btn primary" href="<%= currentUser ? '/explore' : '/register' %>"><%= currentUser ? 'Creator topish' : 'Ro‘yxatdan o‘tish' %></a></div><% } %>
-  <%
-    let adSlot=0;
-    const smartPositions=new Set(Array.isArray(adPositions)?adPositions:[]);
-    const adLimit=adConfig?.networkEnabled
-      ? Number(adConfig?.maxAdsPerPage||6)
-      : Math.min(Number(adConfig?.maxAdsPerPage||6),feedAds?.length||0);
-    posts.forEach((p,i)=>{
-  %>
-    <%if(p.expiresAt){%><div class="fresh-expiry-badge" data-fresh-until="<%=new Date(p.expiresAt).toISOString()%>">⏳ Fresh 24h</div><%}%>
-    <%- include('partials/postcard', { p }) %>
-    <% if(adConfig?.enabled && adSlot<adLimit && smartPositions.has(i+1)){
-         const ad=feedAds?.[adSlot];
-         adSlot++;
-         if(ad){ %>
-      <%- include('partials/adcard',{ad,placement:'feed',variant:'native',adConfig}) %>
-    <% } else if(adConfig.networkEnabled){ %>
-      <%- include('partials/networkad',{placement:'feed',variant:'native',adConfig}) %>
-    <% }} %>
-  <% }); %>
+  <div class="feed-posts" data-feed-posts><%- include('partials/feedposts', { posts, adConfig, adSlots, firstPage: true }) %></div>
+  <div class="feed-more" data-feed-more data-feed-tab="<%=feedMode%>" data-feed-nonce="<%=feedNonce%>" data-feed-has-more="<%=hasMorePosts?'1':'0'%>">
+    <div class="feed-skeleton" data-feed-skeleton hidden aria-hidden="true"><div class="sk-head"></div><div class="sk-media"></div><div class="sk-line"></div></div>
+    <div class="feed-end" data-feed-error hidden><i data-lucide="wifi-off"></i><b>Ulanishda muammo</b><span>Internetni tekshirib, qayta urinib ko‘ring</span><button type="button" class="btn ghost" data-feed-retry>Qayta urinish</button></div>
+    <div class="feed-end" data-feed-end <%=hasMorePosts||!posts.length?'hidden':''%>><i data-lucide="sparkles"></i><b>Hozircha hammasi shu</b><span>Yangi postlar uchun Feed tugmasini qayta bosing</span><a class="btn ghost" href="/feed?tab=<%=feedMode%>&refresh=<%=Date.now()%>">Yangilash</a></div>
+  </div>
 </section>
 <aside class="desktop-side card">
   <h3>Lumi ✦ For You</h3>

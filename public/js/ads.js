@@ -1,5 +1,5 @@
-document.addEventListener('DOMContentLoaded', () => {
-  const cards = [...document.querySelectorAll('[data-ad-card]')];
+window.Lumi.onMount(root => {
+  const cards = [...root.querySelectorAll('[data-ad-card]')].filter(el => window.Lumi.once(el, 'Ad'));
 
   const send = (card, type) => fetch(`/api/ads/${card.dataset.adId}/${type}`, {
     method: 'POST', keepalive: true,
@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => card.remove(), 180);
   }));
 
-  const networkSlots = [...document.querySelectorAll('[data-network-ad]')];
+  const networkSlots = [...root.querySelectorAll('[data-network-ad]')].filter(el => window.Lumi.once(el, 'NetAd'));
   const networkState = new Map(networkSlots.map(slot => [slot, {
     unlockRemaining: Math.max(1, Number(slot.dataset.networkDelay) || 3) * 1000,
     displayRemaining: Math.max(8, Number(slot.dataset.networkVisible) || 12) * 1000,

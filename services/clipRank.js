@@ -1,7 +1,14 @@
 'use strict';
 const {engagementQuality,freshness}=require('./clipScoreBasics');
 function id(v){return String(v?._id||v||'')}
-function clipScore(post,signals={},now=Date.now(),nonce=0){
+/** Bayesian-smoothed retention: unknown clips score 0, proven ones gain up to +10, skipped ones lose up to -8. */
+function retentionScore(st){
+ if(!st)return 0;
+ const n=(st.complete||0)+(st.skip||0)+(st.watch||0),prior=8;
+ const completion=((st.complete||0)+prior*.25)/(n+prior),skip=((st.skip||0)+prior*.35)/(n+prior);
+ return Math.max(-8,Math.min(10,(completion-.25)*28-(skip-.35)*14));
+}
+function clipScore(post,signals={},now=Date.now(),nonce=0,stats=null){
  const aid=id(post.author),pid=id(post._id);
  const hours=Math.max(0,(now-new Date(post.createdAt||now).getTime())/36e5);
  const quality=engagementQuality(post);
@@ -18,7 +25,7 @@ function clipScore(post,signals={},now=Date.now(),nonce=0){
  const organic=post.author?.accountOrigin==='synthetic'?-8:0;
  const hash=Number.parseInt(pid.slice(-5),16)||0;
  const variety=((hash+(Number(nonce)||0))%29)/29*3;
- return quality+young+following+author+tags-repeatPenalty-likedPenalty+organic+variety;
+ return quality+young+following+author+tags-repeatPenalty-likedPenalty+organic+variety+retentionScore(stats);
 }
 function rankClips(rows,signals={},opts={}){
  const now=opts.now||Date.now(),exclude=new Set((opts.exclude||[]).map(id)),uid=id(opts.userId),lim=Math.min(24,Math.max(1,opts.limit||8));
@@ -27,7 +34,7 @@ function rankClips(rows,signals={},opts={}){
   const pid=id(p._id),aid=id(p.author);
   if(!pid||!p.author||exclude.has(pid)||p.author.isSuspended||signals.blocked?.has(aid)||signals.muted?.has(aid)||signals.hiddenAuthors?.has(aid)||signals.hiddenPosts?.has(pid))continue;
   if(p.author.isPrivate&&aid!==uid&&!signals.following?.has(aid))continue;
-  candidates.push({post:p,score:clipScore(p,signals,now,opts.nonce||0)});
+  candidates.push({post:p,score:clipScore(p,signals,now,opts.nonce||0,opts.stats?.get?.(pid)||null)});
  }
  candidates.sort((a,b)=>b.score-a.score||new Date(b.post.createdAt)-new Date(a.post.createdAt));
  const out=[],deferred=[];
@@ -39,4 +46,4 @@ function rankClips(rows,signals={},opts={}){
  for(const p of deferred)if(out.length<lim)out.push(p);
  return out;
 }
-module.exports={clipScore,rankClips};
+module.exports={clipScore,rankClips,retentionScore};
