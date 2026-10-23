@@ -13,6 +13,8 @@ const userSchema = new mongoose.Schema({
   creatorMode:{type:Boolean,default:false,index:true},
   creatorCategory:{type:String,enum:['','lifestyle','beauty','fashion','gaming','tech','education','art','music','food','travel','fitness','cars','humor','other'],default:''},
   creatorSince:{type:Date,default:null},
+  proExpiresAt:{type:Date,default:null},proGrantedAt:{type:Date,default:null},
+  proTheme:{type:String,enum:['default','coral','aurora','onyx'],default:'default'},creatorLink:{type:String,trim:true,maxlength:200,default:''},
   interests:[{type:String,trim:true,lowercase:true,maxlength:32}],
   isVerified:{type:Boolean,default:false}, isSuspended:{type:Boolean,default:false}, suspendedUntil:{type:Date,default:null}, ageConfirmed18:{type:Boolean,required:true,default:false},
   termsAcceptedAt:{type:Date,default:null}, termsVersion:{type:String,default:''},

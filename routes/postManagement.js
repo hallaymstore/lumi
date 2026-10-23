@@ -10,6 +10,7 @@ const {requireAuth}=require('../middleware/auth');
 const {uploadFile,deleteMany}=require('../services/r2');
 const {resolveMentions}=require('../utils/mentions');const {expirationForPublish,isActive}=require('../services/freshPosts');
 
+const {recordCreatorMetric}=require('../services/creatorProgram');
 const upload=multer({
   storage:multer.memoryStorage(),
   limits:{fileSize:20*1024*1024,files:10},
@@ -47,7 +48,7 @@ router.post('/:id/edit',requireAuth,upload.array('images',10),async(req,res)=>{c
 
 router.post('/:id/archive',requireAuth,async(req,res)=>{const post=await ownPost(req);if(!post)return res.sendStatus(404);if((post.status||'published')==='published')await adjustPublishedCount(post.author,-1);post.status='archived';post.isHidden=true;post.isPinned=false;post.archivedAt=new Date();await post.save();res.redirect('/posts/archived')});
 router.post('/:id/unarchive',requireAuth,async(req,res)=>{const post=await ownPost(req);if(!post||post.status!=='archived')return res.sendStatus(404);post.status='published';post.isHidden=false;post.archivedAt=null;post.expiresAt=expirationForPublish();await post.save();await adjustPublishedCount(post.author,1);res.redirect('/u/'+req.currentUser.username)});
-router.post('/:id/publish',requireAuth,async(req,res)=>{const post=await ownPost(req);if(!post||post.status!=='draft')return res.sendStatus(404);if(!(post.media||[]).length&&!post.imageUrl)return res.status(400).render('posts/edit',{title:'Postni tahrirlash',post,error:'Postni chiqarish uchun kamida bitta media qo‘shing.'});post.status='published';post.isHidden=false;post.draftSavedAt=null;post.expiresAt=expirationForPublish();await post.save();await adjustPublishedCount(post.author,1);res.redirect('/p/'+post._id)});
+router.post('/:id/publish',requireAuth,async(req,res)=>{const post=await ownPost(req);if(!post||post.status!=='draft')return res.sendStatus(404);if(!(post.media||[]).length&&!post.imageUrl)return res.status(400).render('posts/edit',{title:'Postni tahrirlash',post,error:'Postni chiqarish uchun kamida bitta media qo‘shing.'});post.status='published';post.isHidden=false;post.draftSavedAt=null;post.expiresAt=expirationForPublish();await post.save();await adjustPublishedCount(post.author,1);recordCreatorMetric(post.author,'originalPosts').catch(()=>{});res.redirect('/p/'+post._id)});
 
 router.post('/:id/delete',requireAuth,async(req,res)=>{const post=await Post.findById(req.params.id);if(!post)return res.sendStatus(404);const isOwner=String(post.author)===String(req.currentUser._id),canModerate=['admin','moderator'].includes(req.currentUser.role);if(!isOwner&&!canModerate)return res.sendStatus(403);const wasPublished=(post.status||'published')==='published';await deleteMany(mediaKeys(post)).catch(()=>{});await Promise.all([PostLike.deleteMany({post:post._id}),SavedPost.deleteMany({post:post._id}),Comment.deleteMany({post:post._id}),PostView.deleteMany({post:post._id}),Post.findByIdAndDelete(post._id)]);if(wasPublished)await adjustPublishedCount(post.author,-1);res.redirect(isOwner?'/u/'+req.currentUser.username:'/admin')});
 
