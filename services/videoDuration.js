@@ -7,9 +7,9 @@ function readMp4(buffers){
   let offset=0;
   while((offset=buffer.indexOf('mvhd',offset,'ascii'))>=0){
    // An mvhd full-box contains the actual movie duration in timescale units.
-   if(offset<4||offset+36>buffer.length){offset+=4;continue}
+   if(offset<4||offset+5>buffer.length){offset+=4;continue}
    const boxSize=buffer.readUInt32BE(offset-4),version=buffer[offset+4];
-   if(boxSize<24||boxSize>256||![0,1].includes(version)){offset+=4;continue}
+   if(boxSize<24||boxSize>256||![0,1].includes(version)||offset+(version===1?36:24)>buffer.length){offset+=4;continue}
    try{
     const scale=buffer.readUInt32BE(offset+(version===1?24:16));
     const units=version===1?Number(buffer.readBigUInt64BE(offset+28)):buffer.readUInt32BE(offset+20);

@@ -12,7 +12,7 @@ function mp4(seconds,version=0){
 function webm(seconds){
  const head=Buffer.from([0x1a,0x45,0xdf,0xa3,0x80]);
  const info=Buffer.from([0x15,0x49,0xa9,0x66,0x92,0x2a,0xd7,0xb1,0x83,0x0f,0x42,0x40,0x44,0x89,0x88]);
- const dur=Buffer.alloc(8);dur.writeDoubleBE(seconds,0);
+ const dur=Buffer.alloc(8);dur.writeDoubleBE(seconds*1000,0);
  return Buffer.concat([head,info,dur,Buffer.alloc(40)]);
 }
 test('30 second max enforced for MP4 version 0 and version 1',()=>{
