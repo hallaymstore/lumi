@@ -14,7 +14,11 @@ const mediaSchema = new mongoose.Schema({
   url:{type:String,required:true}, key:{type:String,default:''},
   type:{type:String,enum:['image','video'],default:'image'},
   width:{type:Number,default:0}, height:{type:Number,default:0},
-  thumbUrl:{type:String,default:''}, thumbKey:{type:String,default:''}
+  thumbUrl:{type:String,default:''}, thumbKey:{type:String,default:''},
+  posterUrl:{type:String,default:''},posterKey:{type:String,default:''},
+  captionsUrl:{type:String,default:''},captionsKey:{type:String,default:''},captionsLang:{type:String,enum:['uz','ru','en'],default:'uz'},
+  playbackUrl:{type:String,default:''},playbackKey:{type:String,default:''},
+  duration:{type:Number,default:0,min:0,max:10800}
 },{_id:false});
 
 const postSchema = new mongoose.Schema({
@@ -48,6 +52,7 @@ const postSchema = new mongoose.Schema({
 },{timestamps:true});
 
 postSchema.index({createdAt:-1});
+postSchema.index({'media.type':1,createdAt:-1});
 postSchema.index({status:1,isHidden:1,expiresAt:1,createdAt:-1});
 postSchema.index({author:1,createdAt:-1});
 postSchema.index({author:1,status:1,updatedAt:-1});

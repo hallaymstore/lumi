@@ -29,7 +29,7 @@ async function claim(Model,now){
     {sort:{expiresAt:1},new:true}
   );
 }
-function keysOfPost(p){return [...new Set([p.imageKey,...(p.media||[]).flatMap(m=>[m.key,m.thumbKey])].filter(Boolean))]}
+function keysOfPost(p){return [...new Set([p.imageKey,...(p.media||[]).flatMap(m=>[m.key,m.thumbKey,m.posterKey,m.captionsKey,m.playbackKey])].filter(Boolean))]}
 async function deleteComments(postId){
   // Iterate to avoid loading thousands of comment IDs into the Node heap.
   while(true){

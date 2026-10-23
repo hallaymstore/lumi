@@ -21,7 +21,7 @@ async function referencedKeys(keys){
   if(!keys.length)return new Set();
   // Only fetch references matching the current small R2 page, never all DB records.
   const [posts,stories,users,messages]=await Promise.all([
-    Post.find({$or:[{imageKey:{$in:keys}},{'media.key':{$in:keys}},{'media.thumbKey':{$in:keys}}]}).select('imageKey media.key media.thumbKey').lean(),
+    Post.find({$or:[{imageKey:{$in:keys}},{'media.key':{$in:keys}},{'media.thumbKey':{$in:keys}},{'media.posterKey':{$in:keys}},{'media.captionsKey':{$in:keys}},{'media.playbackKey':{$in:keys}}]}).select('imageKey media.key media.thumbKey media.posterKey media.captionsKey media.playbackKey').lean(),
     Story.find({$or:[{mediaKey:{$in:keys}},{thumbKey:{$in:keys}},{musicKey:{$in:keys}}]}).select('mediaKey thumbKey musicKey').lean(),
     User.find({avatarKey:{$in:keys}}).select('avatarKey').lean(),
     Message.find({mediaKey:{$in:keys}}).select('mediaKey').lean()
@@ -29,7 +29,7 @@ async function referencedKeys(keys){
   const set=new Set();
   for(const p of posts){
     if(p.imageKey)set.add(p.imageKey);
-    for(const m of p.media||[]){if(m.key)set.add(m.key);if(m.thumbKey)set.add(m.thumbKey)}
+    for(const m of p.media||[]){if(m.key)set.add(m.key);if(m.thumbKey)set.add(m.thumbKey);if(m.posterKey)set.add(m.posterKey);if(m.captionsKey)set.add(m.captionsKey);if(m.playbackKey)set.add(m.playbackKey)}
   }
   for(const s of stories){for(const k of [s.mediaKey,s.thumbKey,s.musicKey])if(k)set.add(k)}
   for(const u of users)if(u.avatarKey)set.add(u.avatarKey);

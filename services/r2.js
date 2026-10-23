@@ -56,6 +56,10 @@ async function uploadFile(file,prefix='media',options={}){
   return {...out,thumbKey:'',thumbUrl:'',width:0,height:0,type:(file.mimetype||'').startsWith('video/')?'video':(file.mimetype||'').startsWith('audio/')?'audio':'file'};
 }
 async function uploadImage(file,prefix='posts',options={}){return uploadFile(file,prefix,options)}
+async function uploadCaption(vtt,prefix='posts/captions'){
+ const key=String(prefix).replace(/[^a-z0-9_\/-]/gi,'').replace(/^\/+|\/+$/g,'')+'/'+Date.now()+'-'+crypto.randomBytes(9).toString('hex')+'.vtt';
+ return put(Buffer.from(vtt,'utf8'),key,'text/vtt; charset=utf-8','public, max-age=3600');
+}
 async function deleteImage(key){if(!key)return;if(!configured())throw new Error('R2 sozlanmagan: media o‘chirilmaydi.');await client().send(new DeleteObjectCommand({Bucket:process.env.R2_BUCKET,Key:key}));}
 async function deleteMany(keys=[]){await Promise.all([...new Set(keys.filter(Boolean))].map(deleteImage))}
 async function listPrefix(prefix,maxKeys=1000){if(!configured())return [];const out=[];let token;do{const r=await client().send(new ListObjectsV2Command({Bucket:process.env.R2_BUCKET,Prefix:prefix,MaxKeys:Math.min(1000,maxKeys-out.length),ContinuationToken:token}));out.push(...(r.Contents||[]));token=r.IsTruncated?r.NextContinuationToken:null}while(token&&out.length<maxKeys);return out}
@@ -68,4 +72,4 @@ async function listPrefixPage(prefix,maxKeys=250,startAfter=''){
   const objects=page.Contents||[];
   return {objects,nextStartAfter:page.IsTruncated&&objects.length?objects[objects.length-1].Key:''};
 }
-module.exports={uploadImage,uploadFile,uploadStream,deleteImage,deleteMany,listPrefix,listPrefixPage,configured,publicUrl};
+module.exports={uploadImage,uploadFile,uploadStream,uploadCaption,deleteImage,deleteMany,listPrefix,listPrefixPage,configured,publicUrl};
