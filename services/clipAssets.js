@@ -29,9 +29,9 @@ function toVtt(input){
  return output;
 }
 function clampVideoMeta(meta={}){
- const width=Math.max(0,Math.min(7680,Math.floor(Number(meta.width)||0)));
- const height=Math.max(0,Math.min(7680,Math.floor(Number(meta.height)||0)));
- const duration=Math.max(0,Math.min(10800,Number(meta.duration)||0));
+ const width=Math.max(0,Math.min(7680,Math.floor(Number.isFinite(Number(meta.width))?Number(meta.width):0)));
+ const height=Math.max(0,Math.min(7680,Math.floor(Number.isFinite(Number(meta.height))?Number(meta.height):0)));
+ const duration=Math.max(0,Math.min(10800,Number.isFinite(Number(meta.duration))?Number(meta.duration):0));
  return {width,height,duration:Number(duration.toFixed(2))};
 }
 module.exports={toVtt,clampVideoMeta,MAX_CAPTIONS_BYTES};

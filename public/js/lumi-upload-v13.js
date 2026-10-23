@@ -63,7 +63,7 @@
     let extra=null;
     if(video){
      progress(Math.round(i/files.length*90),'Video tekshirilmoqda…');
-     extra=await meta(f);
+     try{extra=await meta(f)}catch(err){console.warn('Video metadata fallback:',err.message);extra={width:0,height:0,duration:0}}
      if(mode&&extra.duration>180)throw Error('Lumi Clip maksimum 3 daqiqa davom etishi mumkin.');
      if(extra.width>1920||extra.height>1920)console.warn('1080p dan katta video sekinroq yuklanishi mumkin.');
     }
@@ -71,7 +71,7 @@
     tokens.push(await upload(f));
     if(extra){
      const data={index:i,width:extra.width,height:extra.height,duration:extra.duration};
-     if(extra.poster){progress(Math.round((i+.7)/files.length*90),'Muqova saqlanmoqda…');data.posterToken=await upload(extra.poster,'poster')}
+     if(extra.poster){progress(Math.round((i+.7)/files.length*90),'Muqova saqlanmoqda…');try{data.posterToken=await upload(extra.poster,'poster')}catch(err){console.warn('Muqova yuklanmadi:',err.message)}}
      mediaExtras.push(data);
     }
     progress(Math.round((i+1)/files.length*90),String(i+1)+'/'+files.length+' yuklandi');
