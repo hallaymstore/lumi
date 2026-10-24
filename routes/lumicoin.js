@@ -10,6 +10,7 @@ router.get('/market',requireAuth,async(req,res)=>{
     User.findById(req.currentUser._id).select('name username lumiCoins lumiInventory lumiEquipped phoneVerifiedAt').lean(),
     CoinTransaction.find({user:req.currentUser._id}).sort({createdAt:-1}).limit(25).lean()
   ]);
+  res.locals.currentUser.lumiCoins=user?.lumiCoins||0;
   res.set('Cache-Control','private, no-store');
   res.render('market/index',{title:'Lumi Market',wallet:user,catalog,rules,history,error:req.query.error||'',success:req.query.success||''});
 });

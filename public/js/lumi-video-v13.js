@@ -3,7 +3,7 @@
    Android WebView has mediaPlaybackRequiresUserGesture=false in MainActivity.
 */
 (() => {
-  const state = window.__lumiInlineVideo = { mute: true, shells: new Set(), visible: new Map(), active: null };
+  const state = window.__lumiInlineVideo = { mute: true, shells: new Set(), visible: new Map(), active: null, manuallyPaused: new WeakSet() };
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const saver = !!(navigator.connection && navigator.connection.saveData) || document.body.classList.contains('data-saver');
   const time = value => { const n=Math.max(0,Math.floor(Number.isFinite(value)?value:0));return Math.floor(n/60)+':'+String(n%60).padStart(2,'0'); };
@@ -36,7 +36,7 @@
   }
   function toggle(shell) {
     const v=attach(shell);if(!v)return;
-    if(v.paused)play(shell,true);else v.pause();
+    if(v.paused){state.manuallyPaused.delete(shell);play(shell,true);}else{state.manuallyPaused.add(shell);v.pause();}
   }
   function eligible(shell){
     const track=shell.closest('[data-carousel-track]');if(!track)return true;
@@ -54,12 +54,12 @@
       if(r>ratio && eligible(s)){best=s;ratio=r;}
     }
     if(!best){state.active?.querySelector('video')?.pause();state.active=null;return;}
-    if(state.active!==best||best.querySelector('video')?.paused)play(best);
+    if(!state.manuallyPaused.has(best)&&(state.active!==best||best.querySelector('video')?.paused))play(best);
   }
   const observer='IntersectionObserver' in window?new IntersectionObserver(entries=>{
     for(const e of entries){
       if(e.isIntersecting) {state.visible.set(e.target,e.intersectionRatio);if(e.intersectionRatio>.12)attach(e.target);}
-      else{state.visible.delete(e.target);e.target.querySelector('video')?.pause();}
+      else{state.visible.delete(e.target);state.manuallyPaused.delete(e.target);e.target.querySelector('video')?.pause();}
     }
     pick();
   },{threshold:[0,.12,.3,.55,.7,.9]}):null;

@@ -70,7 +70,7 @@ async function buy(userId,productId) {
   let result={ok:false,error:'Xarid bajarilmadi.'};
   try{
     await session.withTransaction(async()=>{
-      const u=await User.findOne({_id:userId,accountOrigin:'organic',isSuspended:false}).session(session).select('lumiCoins lumiInventory');
+      const u=await User.findOne({_id:userId,accountOrigin:'organic',managedByPlatform:false,isSuspended:false}).session(session).select('lumiCoins lumiInventory');
       if(!u){result={ok:false,error:'Akkaunt mavjud emas.'};return;}
       if((u.lumiInventory||[]).includes(productId)){result={ok:false,error:'Bu bezak allaqachon sizniki.'};return;}
       if(Number(u.lumiCoins||0)<product.price){result={ok:false,error:'LumiCoin yetarli emas.'};return;}
@@ -87,7 +87,7 @@ async function equip(userId,productId,group) {
   if(!groups.has(group))return {ok:false,error:'Kategoriya xato.'};
   const product=byId.get(productId);
   if(productId!=='none'&&(!product||product.group!==group))return {ok:false,error:'Bezak topilmadi.'};
-  const query={_id:userId,accountOrigin:'organic',isSuspended:false};
+  const query={_id:userId,accountOrigin:'organic',managedByPlatform:false,isSuspended:false};
   if(productId!=='none')query.lumiInventory=productId;
   const result=await User.updateOne(query,{$set:{['lumiEquipped.'+group]:productId==='none'?'':productId}});
   return result.matchedCount?{ok:true}:{ok:false,error:'Avval marketdan xarid qiling.'};
