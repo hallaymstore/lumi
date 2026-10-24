@@ -31,6 +31,9 @@ const userSchema = new mongoose.Schema({
   dataSaver:{type:Boolean,default:false}, hiddenWords:[{type:String,trim:true,lowercase:true,maxlength:40}],
   closeFriends:[{type:mongoose.Schema.Types.ObjectId,ref:'User'}],
   lastSeenAt:{type:Date,default:null},
+  lumiCoins:{type:Number,default:0,min:0},
+  lumiInventory:[{type:String,trim:true}],
+  lumiEquipped:{frame:{type:String,default:''},badge:{type:String,default:''},nameplate:{type:String,default:''},bubble:{type:String,default:''},theme:{type:String,default:''},effect:{type:String,default:''}},
   sessionVersion:{type:Number,default:0,min:0}
 },{timestamps:true});
 userSchema.index({name:'text',username:'text'},{weights:{username:10,name:5},name:'user_search_text'});
