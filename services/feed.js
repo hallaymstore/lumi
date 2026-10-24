@@ -8,7 +8,7 @@ const SavedPost=require('../models/SavedPost');
 const {linkifyMentions}=require('../utils/mentions');
 
 const {W,scorePost,arrange,engagementQuality,ageHours}=require('./feedRank');
-const AUTHOR_FIELDS='name username avatarUrl isVerified followerCount isPrivate isSuspended accountOrigin proExpiresAt';
+const AUTHOR_FIELDS='name username avatarUrl isVerified followerCount isPrivate isSuspended accountOrigin proExpiresAt lumiEquipped';
 function uniqById(rows){const m=new Map();for(const p of rows||[]){if(p?._id)m.set(String(p._id),p)}return [...m.values()]}
 
 // Per-user signal cache (45 s). Feed pages and /api/clips/next call userSignals() repeatedly; without a cache every

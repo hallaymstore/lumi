@@ -1,0 +1,56 @@
+<%- include('../partials/head') %><%- include('../partials/topbar') %>
+<main class="content lumi-market">
+  <section class="market-hero">
+    <div class="market-hero-stars" aria-hidden="true">✦　✧　✦</div>
+    <p class="market-eyebrow">LUMI • DIGITAL COLLECTION</p>
+    <h1>O‘zingizga xos <span>uslub yarating</span> ✨</h1>
+    <p>Post, izoh va chatda ko‘rinadigan noyob bezaklarni to‘plang. Harakatlaringiz orqali LumiCoin ishlab toping.</p>
+    <div class="market-wallet">
+      <span class="market-coin-icon" aria-hidden="true">✦</span>
+      <div><small>Mening balansim</small><strong><%=Number(wallet.lumiCoins||0).toLocaleString('en-US')%> <em>LumiCoin</em></strong></div>
+      <a href="#lumi-earn" class="market-earn-link">Qanday yig‘aman? <i data-lucide="arrow-down"></i></a>
+    </div>
+  </section>
+  <% if(error){ %><div class="market-alert error"><%=String(error).slice(0,180)%></div><% } %>
+  <% if(success){ %><div class="market-alert success"><%=String(success).slice(0,180)%></div><% } %>
+  <% if(!wallet.phoneVerifiedAt){ %><div class="market-alert">Coin olish uchun telefon raqamingizni tasdiqlang. Marketni ko‘rish va oldin yig‘ilgan coinlardan foydalanish mumkin.</div><% } %>
+  <nav class="market-tabs" aria-label="Market bo‘limlari">
+    <a href="#frame">Ramkalar</a><a href="#badge">Belgilar</a><a href="#nameplate">Ismlar</a>
+    <a href="#bubble">Chat</a><a href="#theme">Profil</a><a href="#effect">Effekt</a>
+  </nav>
+  <% const categories=[['frame','Profil ramkalari','Feed, izoh, chat va profilning o‘zida'],['badge','Yorliqlar','Ism yonidagi dekorativ belgi'],['nameplate','Ism uslublari','Qiziqarli nickname rangi'],['bubble','Chat uslublari','Suhbatdagi xabar pufakchalari'],['theme','Profil fonlari','Shaxsiy sahifa bezagi'],['effect','Maxsus effektlar','Profil avataridagi yorug‘lik']]; %>
+  <% categories.forEach(([group,heading,subtitle])=>{const rows=catalog.filter(i=>i.group===group);%>
+    <section class="market-section" id="<%=group%>">
+      <div class="market-section-head"><div><h2><%=heading%></h2><p><%=subtitle%></p></div><span><%=rows.length%> ta</span></div>
+      <div class="market-grid">
+        <% rows.forEach(item=>{const owned=(wallet.lumiInventory||[]).includes(item.id);const active=wallet.lumiEquipped&&wallet.lumiEquipped[group]===item.id; %>
+          <article class="market-product <%=active?'market-active':''%>">
+            <div class="market-preview market-preview-<%=item.id%>">
+              <% if(group==='frame'||group==='effect'){ %><span class="market-demo-avatar lumi-frame-<%=group==='frame'?item.id:''%> lumi-effect-<%=group==='effect'?item.id:''%>"><img src="<%=currentUser.avatarUrl||'/icons/icon-192.png'%>" alt=""></span>
+              <% }else if(group==='bubble'){ %><span class="market-chat-demo lumi-bubble-<%=item.id%>">Salom! 👋</span>
+              <% }else if(group==='nameplate'){ %><strong class="lumi-nameplate-<%=item.id%>">Lumi Star</strong>
+              <% }else if(group==='theme'){ %><span class="market-theme-card lumi-theme-<%=item.id%>"><i data-lucide="user-round"></i> My profile</span>
+              <% }else{ %><span class="market-badge-demo"><%=item.icon%></span><% } %>
+              <% if(active){ %><b class="market-owned active"><i data-lucide="check-circle-2"></i> Faol</b><% } else if(owned){ %><b class="market-owned"><i data-lucide="check"></i> Sizniki</b><% } %>
+            </div>
+            <div class="market-product-copy"><div><h3><%=item.title%></h3><p><%=item.description%></p></div>
+              <% if(active){ %><form method="post" action="/market/equip/<%=group%>/none"><button type="submit" class="market-buy owned">O‘chirish</button></form>
+              <% }else if(owned){ %><form method="post" action="/market/equip/<%=group%>/<%=item.id%>"><button type="submit" class="market-buy equip">Qo‘llash <i data-lucide="check"></i></button></form>
+              <% }else{ %><form method="post" action="/market/buy/<%=item.id%>"><button type="submit" class="market-buy" <%=Number(wallet.lumiCoins||0)<item.price?'disabled title="Coin yetarli emas"':''%>><i data-lucide="sparkles"></i> <%=item.price%> Coin</button></form><% } %>
+            </div>
+          </article>
+        <% }) %>
+      </div>
+    </section>
+  <% }) %>
+  <section class="market-instructions" id="lumi-earn">
+    <h2>🪙 LumiCoin qanday yig‘iladi?</h2><p>Faqat haqiqiy, tasdiqlangan akkauntlar ishtirok etadi. Har bir amal uchun kunlik limit mavjud; takroriy va sun’iy faollik hisobga olinmaydi.</p>
+    <div class="market-earn-grid">
+      <% const texts={welcome:'Boshlang‘ich bonus',upload:'Yangi post yoki clip',like:'Boshqaning postiga like',comment:'Mazmunli izoh',follow:'Yangi obuna',received_like:'Postingizga like',received_comment:'Postingizga izoh',received_follow:'Yangi follower',views_10:'10 ta tasdiqlangan noyob ko‘rish'}; %>
+      <% Object.entries(rules).forEach(([key,val])=>{ %><div class="market-earn-row"><span><%=texts[key]||key%> <small>Kuniga <%=val.maxDaily%> tagacha</small></span><b>+<%=val.coins%></b></div><% }) %>
+    </div>
+    <p class="market-disclaimer">LumiCoin — faqat ilova ichida ishlatiladigan virtual ball. Uni pulga aylantirib, sotib yoki boshqa foydalanuvchiga o‘tkazib bo‘lmaydi. Like/follow soni yoki ko‘rishlar kafolatlanmaydi.</p>
+  </section>
+  <% if(history.length){ %><section class="market-history"><h2>So‘nggi amallar</h2><div class="market-history-list"><%history.forEach(h=>{%><div><span><%=h.action==='purchase'?'🛍️ Xarid':(h.action==='views_10'?'👁️ Ko‘rish':h.action.replace(/_/g,' '))%><small><%=new Date(h.createdAt).toLocaleString('uz-UZ')%></small></span><strong class="<%=h.delta>0?'gain':'spend'%>"><%=h.delta>0?'+':''%><%=h.delta%></strong></div><%})%></div></section><% } %>
+</main>
+<%- include('../partials/footer') %>

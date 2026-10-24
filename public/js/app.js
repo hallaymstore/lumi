@@ -172,8 +172,8 @@ document.addEventListener('DOMContentLoaded', () => {
       : `<b>${esc((c.user.name || c.user.username || 'U')[0].toUpperCase())}</b>`;
     const replyTo = c.replyToUser ? `<a href="/u/${encodeURIComponent(c.replyToUser.username)}" class="reply-mention">@${esc(c.replyToUser.username)}</a> ` : '';
     return `<article class="sheet-comment" data-comment-id="${esc(c.id)}">
-      <a class="avatar comment-avatar" href="/u/${encodeURIComponent(c.user.username)}">${avatar}</a>
-      <div class="comment-main"><p><a class="comment-user" href="/u/${encodeURIComponent(c.user.username)}">${esc(c.user.username)}</a> ${replyTo}${esc(c.text)}</p>
+      <a class="avatar comment-avatar lumi-frame-${esc(c.user.lumiEquipped?.frame||'')} lumi-effect-${esc(c.user.lumiEquipped?.effect||'')}" href="/u/${encodeURIComponent(c.user.username)}">${avatar}</a>
+      <div class="comment-main"><p><a class="comment-user lumi-nameplate-${esc(c.user.lumiEquipped?.nameplate||'')}" href="/u/${encodeURIComponent(c.user.username)}">${esc(c.user.username)}</a> ${({'badge-star':'⭐','badge-crown':'👑','badge-butterfly':'🦋','badge-diamond':'💎'})[c.user.lumiEquipped?.badge]||''} ${replyTo}${esc(c.text)}</p>
         <div class="comment-meta"><span>${new Date(c.createdAt).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</span><button type="button" data-reply-to="${esc(c.id)}" data-reply-user="${esc(c.user.username)}">Reply</button><span>${c.likeCount ? c.likeCount + ' like' : ''}</span>${c.isHidden?'<span class="comment-hidden-badge">Yashirin</span>':''}${c.canModerate?`<button type="button" data-comment-pin="${esc(c.id)}">${c.isPinned?'Unpin':'Pin'}</button>${c.isHidden?`<button type="button" data-comment-show="${esc(c.id)}">Show</button>`:''}`:''}${c.canDelete?`<button type="button" data-comment-delete="${esc(c.id)}">Delete</button>`:''}${isAuthenticated?`<button type="button" data-comment-report="${esc(c.id)}">Report</button>`:''}</div>
       </div>
       <button type="button" class="comment-like ${c.liked ? 'liked':''}" data-comment-like="${esc(c.id)}"><i data-lucide="heart"></i><small>${c.likeCount || ''}</small></button>
