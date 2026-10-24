@@ -1,0 +1,80 @@
+
+/* LumiCoin v2.1 — mobile-first collectible shop + shared profile cosmetics */
+.lumi-market{max-width:1110px;margin:0 auto 110px;padding:14px 14px 32px}
+.market-hero{isolation:isolate;position:relative;overflow:hidden;border:1px solid rgba(231,151,255,.23);border-radius:26px;padding:28px 23px 24px;background:radial-gradient(circle at 88% 5%,rgba(234,84,195,.28),transparent 42%),radial-gradient(circle at 12% 95%,rgba(80,65,230,.3),transparent 50%),linear-gradient(140deg,#201332,#120c22);color:#fff;box-shadow:0 24px 60px rgba(76,21,107,.17)}
+.market-hero-stars{position:absolute;right:10px;top:12px;color:#e4bbff;font-size:21px;opacity:.58;letter-spacing:16px;pointer-events:none}
+.market-eyebrow{font-weight:800;font-size:10px;letter-spacing:2.5px!important;color:#edb5ff!important;margin-bottom:10px!important}
+.market-hero h1{font-size:clamp(25px,5vw,39px);font-weight:850;letter-spacing:-1.2px;margin:0 0 8px;line-height:1.13}
+.market-hero h1 span{background:linear-gradient(90deg,#ff9eea,#a5a0ff);color:transparent;background-clip:text}
+.market-hero>p:not(.market-eyebrow){font-size:13px;max-width:560px;color:#d5cce1;margin:4px 0 17px}
+.market-wallet{display:flex;align-items:center;gap:11px;border:1px solid rgba(255,255,255,.17);background:rgba(255,255,255,.08);backdrop-filter:blur(16px);border-radius:19px;padding:12px 15px;width:min(100%,520px)}
+.market-coin-icon{width:42px;height:42px;flex:none;display:grid;place-items:center;background:linear-gradient(140deg,#f9d368,#d58830);border:2px solid #ffe5a6;border-radius:50%;box-shadow:0 2px 15px #e7b64b55;color:#563108;font-size:25px;font-weight:900}
+.market-wallet small{display:block;font-size:11px;color:#dcd0e6}
+.market-wallet strong{display:block;font-size:24px;font-weight:850;white-space:nowrap;line-height:1.15}
+.market-wallet em{font-size:11px;font-style:normal;font-weight:600;color:#dbd1e4}
+.market-earn-link{margin-left:auto;color:#f7d7ff;font-size:11px;text-decoration:none;display:flex;align-items:center;gap:4px}
+.market-alert{background:rgba(202,149,255,.12);padding:12px;margin:12px 0;border-radius:13px;font-size:13px;border:1px solid rgba(202,149,255,.21)}
+.market-alert.error{border-color:#fb607d}.market-alert.success{border-color:#67d9a3}
+.market-tabs{display:flex;gap:8px;overflow:auto;scrollbar-width:none;position:sticky;top:4px;z-index:9;padding:13px 0;background:var(--bg,transparent)}
+.market-tabs a{flex:none;border-radius:999px;background:var(--card,#24152f);border:1px solid var(--border,rgba(165,135,195,.25));text-decoration:none;color:var(--text,#faf7ff);font-size:12px;font-weight:700;padding:9px 15px}
+.market-tabs a:hover,.market-tabs a:focus{border-color:#e67bcf;color:#ef82d5}
+.market-section{scroll-margin-top:65px;margin:11px 0 26px}.market-section-head{display:flex;justify-content:space-between;align-items:center;margin:0 2px 14px}.market-section-head h2{font-size:20px;letter-spacing:-.4px;margin:0 0 4px}.market-section-head p{font-size:12px;color:var(--muted,#999);margin:0}.market-section-head>span{font-size:11px;opacity:.6}
+.market-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
+.market-product{min-width:0;overflow:hidden;border-radius:20px;border:1px solid var(--border,rgba(165,135,195,.2));background:var(--card,#20162e);transition:transform .16s,border-color .16s}
+.market-product:hover{transform:translateY(-2px);border-color:#a965d9}.market-product.market-active{border-color:#ca75e5}
+.market-preview{height:139px;position:relative;display:grid;place-items:center;overflow:hidden;background:radial-gradient(circle at 70% 20%,#6f418b65,transparent 65%),linear-gradient(145deg,#382149,#141026)}
+.market-preview-frame-flame{background:linear-gradient(140deg,#40172b,#5d321c,#151020)}
+.market-preview-frame-frost{background:linear-gradient(140deg,#15394a,#304e90,#13182e)}
+.market-preview-frame-galaxy{background:linear-gradient(140deg,#42216c,#131348,#19102f)}
+.market-preview-frame-royal{background:linear-gradient(140deg,#4c3920,#2d2144,#1a1121)}
+.market-demo-avatar{display:block;width:76px;height:76px;border-radius:50%;position:relative;flex:none}
+.market-demo-avatar img{display:block;width:100%;height:100%;object-fit:cover;border-radius:inherit;border:3px solid #24132c}
+.market-badge-demo{font-size:52px;filter:drop-shadow(0 3px 16px #bd91ecaa)}
+.market-preview [class^="lumi-nameplate"]{font-size:23px}
+.market-chat-demo{display:block;background:#a272e3;padding:11px 19px;border-radius:17px;color:white;font-weight:750}
+.market-theme-card{display:flex;align-items:center;gap:8px;padding:18px 20px;border-radius:16px;color:white;font-weight:750}
+.market-owned{position:absolute;right:8px;top:8px;font-size:10px;background:rgba(20,12,30,.8);color:#e7cfef;display:flex;align-items:center;gap:3px;padding:4px 8px;border-radius:999px}
+.market-owned.active{background:#683c96}
+.market-product-copy{padding:11px 12px 12px;display:flex;flex-direction:column;justify-content:space-between;gap:12px;min-height:126px}
+.market-product-copy h3{font-size:14px;font-weight:800;margin:0 0 3px}.market-product-copy p{font-size:11px;line-height:1.4;margin:0;color:var(--muted,#aaa)}
+.market-product-copy form{width:100%}.market-buy{background:linear-gradient(95deg,#bc4aac,#624dc1);border:0;border-radius:12px;color:white;width:100%;min-height:35px;padding:8px 10px;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer}
+.market-buy:disabled{background:rgba(137,119,153,.3);opacity:.65;cursor:not-allowed}
+.market-buy.equip{background:linear-gradient(100deg,#4379c7,#8050c8)}.market-buy.owned{background:transparent;border:1px solid #8f7caa;color:inherit}
+.market-instructions,.market-history{scroll-margin-top:70px;padding:20px;border-radius:19px;background:var(--card,#21172e);border:1px solid var(--border,rgba(165,135,195,.22));margin-top:22px}
+.market-instructions h2,.market-history h2{font-size:20px;margin:0 0 9px}.market-instructions>p{font-size:12px;line-height:1.6;color:var(--muted,#aaa)}
+.market-earn-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:14px 0}
+.market-earn-row{display:flex;justify-content:space-between;align-items:center;gap:5px;border-radius:11px;background:rgba(143,109,168,.10);padding:10px}
+.market-earn-row span{font-size:12px}.market-earn-row small{display:block;color:var(--muted,#aaa);font-size:10px;margin-top:2px}.market-earn-row b{color:#d38edb;white-space:nowrap}
+.market-disclaimer{font-size:11px!important;margin-bottom:0}
+.market-history-list>div{border-top:1px solid var(--border,rgba(154,120,174,.17));display:flex;justify-content:space-between;padding:10px 0;font-size:13px}.market-history-list small{display:block;color:var(--muted,#aaa);font-size:10px}.market-history-list strong.gain{color:#69c991}.market-history-list strong.spend{color:#e188a5}
+.lumi-coin-chip{display:inline-flex;gap:4px;align-items:center;padding:5px 8px;border-radius:20px;background:linear-gradient(105deg,#f0c36b2e,#b874db2c);color:var(--text,#fff);text-decoration:none;font-size:11px;font-weight:850;white-space:nowrap;border:1px solid rgba(205,146,242,.25)}
+/* Five distinct premium avatar frames, fully CSS-based. No external images. */
+.lumi-frame-frame-aurora,.lumi-frame-frame-royal,.lumi-frame-frame-flame,.lumi-frame-frame-frost,.lumi-frame-frame-galaxy{position:relative;isolation:isolate;border:3px solid transparent!important;background-origin:border-box!important;background-clip:padding-box,border-box!important;overflow:visible!important}
+.lumi-frame-frame-aurora{background:linear-gradient(#25162e,#25162e) padding-box,conic-gradient(#ff6cae,#a48afe,#65e6f5,#ff6cae) border-box!important;box-shadow:0 0 11px #e778cc8c}
+.lumi-frame-frame-royal{background:linear-gradient(#261a23,#261a23) padding-box,conic-gradient(#c18a36,#ffefae,#bd7b26,#fff2b7,#c18a36) border-box!important;box-shadow:0 0 12px #e5bb6580}
+.lumi-frame-frame-flame{background:linear-gradient(#241321,#241321) padding-box,conic-gradient(#f63866,#ffbe51,#ff603b,#e43d8f,#f63866) border-box!important;box-shadow:0 0 14px #f04c5380}
+.lumi-frame-frame-frost{background:linear-gradient(#1d2338,#1d2338) padding-box,conic-gradient(#d9fbff,#4a9cf0,#b7dfff,#52d5ec,#d9fbff) border-box!important;box-shadow:0 0 12px #6ac7ee7d}
+.lumi-frame-frame-galaxy{background:linear-gradient(#1d1232,#1d1232) padding-box,conic-gradient(#8157ff,#dd75eb,#68d5ff,#8762e8,#8157ff) border-box!important;box-shadow:0 0 15px #9b69fbaf;animation:lumi-galaxy-glow 3.4s ease-in-out infinite alternate}
+@keyframes lumi-galaxy-glow{from{box-shadow:0 0 9px #9b69fb88}to{box-shadow:0 0 22px #d176f1e8}}
+.lumi-frame-frame-aurora img,.lumi-frame-frame-royal img,.lumi-frame-frame-flame img,.lumi-frame-frame-frost img,.lumi-frame-frame-galaxy img{width:100%!important;height:100%!important;object-fit:cover;border-radius:50%!important}
+.lumi-effect-effect-spark{filter:drop-shadow(0 0 9px #d78bfa)}.lumi-effect-effect-halo{filter:drop-shadow(0 0 12px #fbc973)}
+.lumi-nameplate-name-glow{background:linear-gradient(90deg,#ff88ce,#8b82ff);background-clip:text;-webkit-background-clip:text;color:transparent!important}
+.lumi-nameplate-name-gold{color:#ddb158!important;text-shadow:0 0 10px #ffda8175}
+.lumi-nameplate-name-rose{color:#ef6dba!important}
+.lumi-cosmetic-badge{font-size:13px;margin-left:3px;white-space:nowrap}
+.lumi-profile-theme-theme-dusk .profile-hero,.lumi-theme-theme-dusk{background:linear-gradient(130deg,#6f4072,#de7288,#303060)!important}
+.lumi-profile-theme-theme-cosmos .profile-hero,.lumi-theme-theme-cosmos{background:linear-gradient(125deg,#25124d,#724ca0,#15336f)!important}
+.lumi-profile-theme-theme-pearl .profile-hero,.lumi-theme-theme-pearl{background:linear-gradient(130deg,#d4b2d8,#f2e6d4,#b1c4e4)!important;color:#281b3d!important}
+.lumi-bubble-bubble-lavender .message-bubble,.market-chat-demo.lumi-bubble-bubble-lavender{background:linear-gradient(135deg,#9c69db,#cb7dd6)!important;color:#fff!important}
+.lumi-bubble-bubble-mint .message-bubble,.market-chat-demo.lumi-bubble-bubble-mint{background:linear-gradient(135deg,#409e94,#74b9ac)!important;color:#fff!important}
+.lumi-bubble-bubble-onyx .message-bubble,.market-chat-demo.lumi-bubble-bubble-onyx{background:linear-gradient(140deg,#1c1a29,#494359)!important;color:#fff!important;border:1px solid #958cab70}
+.chat-room[data-my-bubble="bubble-lavender"] .message-wrap.mine .message-bubble,.chat-room[data-peer-bubble="bubble-lavender"] .message-wrap.theirs .message-bubble{background:linear-gradient(135deg,#9c69db,#cb7dd6)!important;color:white!important}
+.chat-room[data-my-bubble="bubble-mint"] .message-wrap.mine .message-bubble,.chat-room[data-peer-bubble="bubble-mint"] .message-wrap.theirs .message-bubble{background:linear-gradient(135deg,#409e94,#74b9ac)!important;color:white!important}
+.chat-room[data-my-bubble="bubble-onyx"] .message-wrap.mine .message-bubble,.chat-room[data-peer-bubble="bubble-onyx"] .message-wrap.theirs .message-bubble{background:linear-gradient(140deg,#1c1a29,#494359)!important;color:white!important;border:1px solid #958cab70}
+.lumi-video-player video{width:100%;height:100%;object-fit:cover;display:block}
+.lumi-video-player .lumi-video-bigplay{transition:opacity .2s,transform .2s}
+.lumi-video-player.is-playing .lumi-video-bigplay{opacity:0!important;pointer-events:none!important;transform:scale(.88)}
+.lumi-video-player.is-buffering:after{content:'';position:absolute;top:47%;left:47%;width:21px;height:21px;border:2px solid #fff5;border-top-color:#fff;border-radius:50%;animation:lumi-spin .7s linear infinite;pointer-events:none}
+@keyframes lumi-spin{to{transform:rotate(360deg)}}
+@media(max-width:550px){.lumi-market{padding:8px 10px 115px}.market-hero{padding:23px 16px}.market-hero h1{font-size:28px}.market-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.market-preview{height:115px}.market-demo-avatar{width:70px;height:70px}.market-product-copy{padding:10px;min-height:137px}.market-wallet strong{font-size:20px}.market-earn-grid{grid-template-columns:1fr}.market-earn-link{font-size:10px}.market-tabs{top:0}.market-section-head h2{font-size:17px}}
+@media(prefers-reduced-motion:reduce){.lumi-frame-frame-galaxy{animation:none}.market-product{transition:none}}
